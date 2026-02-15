@@ -87,11 +87,13 @@ function generatePDF() {
     // load jsPDF and autotable plugin
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    // set consistent line height and factor for later text blocks
+    doc.setLineHeightFactor(1.2);
+    const lineHeight = 5; // slightly tighter spacing for addresses
 
   // gather values from inputs
   const invoiceNo = document.getElementById('invoiceNo').value;
   const invoiceDate = document.getElementById('invoiceDate').value;
-  const dueDate = document.getElementById('dueDate').value;
   const client = document.getElementById('clientName').value;
   const clientAddress = document.getElementById('clientAddress').value;
   const email = document.getElementById('clientEmail').value;
@@ -101,6 +103,15 @@ function generatePDF() {
   const serviceDesc = document.getElementById('serviceDesc') ? document.getElementById('serviceDesc').value : '';
   const period = document.getElementById('period').value;
   const paymentTerms = document.getElementById('paymentTerms') ? document.getElementById('paymentTerms').value : '';
+  // calculate due date by adding paymentTerms (days) to invoiceDate
+  let dueDate = '';
+  if (invoiceDate) {
+    const inv = new Date(invoiceDate);
+    const days = parseInt(paymentTerms, 10) || 0;
+    inv.setDate(inv.getDate() + days);
+    // format yyyy-mm-dd for PDF display
+    dueDate = inv.toISOString().slice(0, 10);
+  }
   const qty = Number(document.getElementById('qty').value) || 0;
   const rate = Number(document.getElementById('rate').value) || 0;
   const amount = qty * rate;
@@ -139,33 +150,46 @@ function generatePDF() {
   doc.setFont('helvetica', 'bold');
   doc.text('INVOICE', 105, 52, null, null, 'center');
 
-  // position invoice metadata at same y as "Bill To" heading (y=60) and right-align
+  // position invoice metadata at same y as "Bill To" heading and right-align
   const invY = 60;
   const rightX = 190; // near right margin
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`Invoice # : ${invoiceNo}`, rightX, invY - 2, null, null, 'right');
   doc.text(`Invoice Date : ${invoiceDate}`, rightX, invY + 2, null, null, 'right');
-  doc.text(`Due Date : ${dueDate}`, rightX, invY + 6, null, null, 'right');
+  if (dueDate) {
+    doc.text(`Due Date : ${dueDate}`, rightX, invY + lineHeight, null, null, 'right');
+  }
 
-  // bill to section
+  // bill to section with dynamic spacing
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Bill To', 20, 60);
+  doc.text('Bill To', 20, invY);
   doc.setFont('helvetica', 'normal');
-  doc.text(client, 20, 66);
-  doc.text(clientAddress, 20, 70);
-  doc.text(`${email}`, 20, 74);
-  doc.text(`${phone}`, 20, 78);
-  if (paymentTerms) {
-    doc.text(`Payment Terms: ${paymentTerms}`, 20, 82);
-  }
+  let billY = invY + lineHeight;
+  doc.text(client, 20, billY);
+  // uniform spacing: advance by full lineHeight before each subsequent line
+  billY += lineHeight;
+  // split address into non-empty, trimmed lines
+  const clientAddrLines = clientAddress
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+  clientAddrLines.forEach(line => {
+    doc.text(line, 20, billY);
+    billY += lineHeight;
+  });
+  doc.text(email, 20, billY);
+  billY += lineHeight;
+  doc.text(phone, 20, billY);
+  billY += lineHeight;
 
   // item table
   const margin = 20;
   const pageWidth = doc.internal.pageSize.getWidth();
+  const tableStart = billY + lineHeight;
   doc.autoTable({
-    startY: 85,
+    startY: tableStart,
     margin: { left: margin, right: margin },
     tableWidth: pageWidth - margin * 2,
     head: [[
