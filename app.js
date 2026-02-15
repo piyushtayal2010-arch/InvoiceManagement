@@ -158,7 +158,8 @@ function generatePDF() {
   doc.text(`Invoice # : ${invoiceNo}`, rightX, invY - 2, null, null, 'right');
   doc.text(`Invoice Date : ${invoiceDate}`, rightX, invY + 2, null, null, 'right');
   if (dueDate) {
-    doc.text(`Due Date : ${dueDate}`, rightX, invY + lineHeight, null, null, 'right');
+    // same 4‑point gap as between invoice # and invoice date
+    doc.text(`Due Date : ${dueDate}`, rightX, invY + 6, null, null, 'right');
   }
 
   // bill to section with dynamic spacing
@@ -193,8 +194,8 @@ function generatePDF() {
     margin: { left: margin, right: margin },
     tableWidth: pageWidth - margin * 2,
     head: [[
-      { content: 'Sr no.', styles: { halign: 'center' } },
-      'Product/Services',
+      { content: 'Sr No.', styles: { halign: 'center' } },
+      'Services',
       { content: 'Qty', styles: { halign: 'right' } },
       { content: 'Rate', styles: { halign: 'right' } },
       { content: 'Tax', styles: { halign: 'right' } },
@@ -202,7 +203,7 @@ function generatePDF() {
     ]],
     body: [[
       '1',
-      service + '\nHSN Code : ' + hsn + (serviceDesc ? '\nDescription: ' + serviceDesc : '') + '\n' + period,
+      service + '\nHSN Code : ' + hsn + (serviceDesc ? '\n' + serviceDesc : '') + '\n' + period,
       qty.toString(),
       rate.toFixed(2),
       '0.00',
