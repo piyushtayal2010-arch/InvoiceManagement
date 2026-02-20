@@ -7,19 +7,15 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- autoTable plugin for better table formatting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="grey lighten-4">
-  <!-- navigation -->
   <nav class="blue darken-2">
     <div class="nav-wrapper">
       <a href="#" class="brand-logo center">Invoice App</a>
-
     </div>
   </nav>
 
-  <!-- custom sidebar -->
   <div class="sidebar">
     <a href="index.html"><i class="material-icons">home</i><span class="link-text">Home</span></a>
     <a href="clients.html"><i class="material-icons">people</i><span class="link-text">Clients</span></a>
@@ -27,114 +23,172 @@
     <a href="settings.html"><i class="material-icons">settings</i><span class="link-text">Settings</span></a>
   </div>
 
-<main class="main-content">
-  <div class="container">
-    <h3 class="center-align blue-text text-darken-2">Invoice Generator</h3>
+  <main class="main-content">
+    <div class="container">
+      <h3 class="center-align blue-text text-darken-2">Invoice Generator</h3>
 
-    <div class="card">
-      <div class="card-content">
-        <span class="card-title">Invoice Info</span>
-        <div class="row">
-          <div class="input-field col s12 m6">
-            <input id="invoiceNo" type="text" class="validate">
-            <label for="invoiceNo">Invoice No</label>
-          </div>
-          <div class="input-field col s12 m6">
-            <input id="invoiceDate" type="date" class="validate">
-            <label for="invoiceDate" class="active">Invoice Date</label>
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Invoice Info</span>
+          <div class="row">
+            <div class="input-field col s12 m4">
+              <input id="invoiceNo" type="text" class="validate">
+              <label for="invoiceNo">Invoice No</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="invoiceDate" type="date" class="validate">
+              <label for="invoiceDate" class="active">Invoice Date</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <select id="currency">
+                <option value="CAD" selected>CAD</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="INR">INR</option>
+              </select>
+              <label>Currency</label>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-content">
-        <span class="card-title">Client (Bill To)</span>
-        <div class="row">
-          <div class="input-field col s12 m4">
-            <select id="clientSelect">
-              <option value="" disabled selected>Choose client</option>
-            </select>
-            <label>Select Client</label>
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Client (Bill To)</span>
+          <div class="row">
+            <div class="input-field col s12 m4">
+              <select id="clientSelect">
+                <option value="" disabled selected>Choose client</option>
+              </select>
+              <label>Select Client</label>
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12 m3">
-            <input id="clientName" type="text" class="validate">
-            <label for="clientName">Client Name</label>
+          <div class="row">
+            <div class="input-field col s12 m3">
+              <input id="clientName" type="text" class="validate">
+              <label for="clientName">Client Name</label>
+            </div>
+            <div class="input-field col s12 m5">
+              <textarea id="clientAddress" class="materialize-textarea" rows="2"></textarea>
+              <label for="clientAddress">Address</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="clientEmail" type="email" class="validate">
+              <label for="clientEmail">Email</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="clientPhone" type="text" class="validate">
+              <label for="clientPhone">Phone</label>
+            </div>
           </div>
-          <div class="input-field col s12 m5">
-            <textarea id="clientAddress" class="materialize-textarea" rows="2"></textarea>
-            <label for="clientAddress">Address</label>
-          </div>
-          <div class="input-field col s12 m2">
-            <input id="clientEmail" type="email" class="validate">
-            <label for="clientEmail">Email</label>
-          </div>
-          <div class="input-field col s12 m2">
-            <input id="clientPhone" type="text" class="validate">
-            <label for="clientPhone">Phone</label>
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12 m4">
-            <input id="paymentTerms" type="text" class="validate">
-            <label for="paymentTerms">Payment Terms</label>
+          <div class="row">
+            <div class="input-field col s12 m4">
+              <input id="paymentTerms" type="text" class="validate">
+              <label for="paymentTerms">Payment Terms (days)</label>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-content">
-        <span class="card-title">Service</span>
-        <div class="row">
-          <div class="input-field col s12 m6">
-            <select id="serviceSelect">
-              <option value="" disabled selected>Choose service</option>
-            </select>
-            <label>Select Service</label>
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Add Invoice Item</span>
+          <div class="row">
+            <div class="input-field col s12 m4">
+              <select id="serviceSelect">
+                <option value="" disabled selected>Choose service</option>
+              </select>
+              <label>Select Service</label>
+            </div>
+            <div class="input-field col s12 m3">
+              <input id="serviceName" type="text" class="validate">
+              <label for="serviceName">Service Name</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="hsn" type="text" class="validate">
+              <label for="hsn">HSN Code</label>
+            </div>
+            <div class="input-field col s12 m3">
+              <input id="period" type="text" class="validate">
+              <label for="period">Service Period</label>
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12 m3">
-            <input id="serviceName" type="text" class="validate">
-            <label for="serviceName">Service Name</label>
+          <div class="row">
+            <div class="input-field col s12 m5">
+              <textarea id="serviceDesc" class="materialize-textarea"></textarea>
+              <label for="serviceDesc">Description</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="qty" type="number" min="0" step="1" class="validate">
+              <label for="qty">Qty</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="rate" type="number" min="0" step="0.01" class="validate">
+              <label for="rate">Rate</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="itemTax" type="number" min="0" step="0.01" class="validate" value="0">
+              <label for="itemTax" class="active">Tax %</label>
+            </div>
+            <div class="input-field col s12 m1 add-item-wrap">
+              <button id="addItem" class="btn blue darken-2" type="button"><i class="material-icons">add</i></button>
+            </div>
           </div>
-          <div class="input-field col s12 m2">
-            <input id="hsn" type="text" class="validate">
-            <label for="hsn">HSN Code</label>
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12">
-            <textarea id="serviceDesc" class="materialize-textarea"></textarea>
-            <label for="serviceDesc">Description</label>
-          </div>
-        </div>
-        <div class="row">
-          <div class="input-field col s12 m3">
-            <input id="period" type="text" class="validate">
-            <label for="period">Service Period</label>
-          </div>
-          <div class="input-field col s12 m2">
-            <input id="qty" type="number" class="validate">
-            <label for="qty">Qty</label>
-          </div>
-          <div class="input-field col s12 m2">
-            <input id="rate" type="number" class="validate">
-            <label for="rate">Rate (CAD)</label>
+
+          <div class="invoice-items-wrap">
+            <table class="striped responsive-table" id="itemTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Service</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Tax %</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itemTableBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="center-align" style="margin: 2rem 0;">
-      <button class="btn-large blue darken-2 waves-effect waves-light" onclick="generatePDF()">
-        <i class="material-icons left">download</i>Download Invoice PDF
-      </button>
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Totals & Notes</span>
+          <div class="row">
+            <div class="input-field col s12 m3">
+              <input id="discount" type="number" min="0" step="0.01" value="0">
+              <label for="discount" class="active">Discount (flat)</label>
+            </div>
+            <div class="input-field col s12 m3">
+              <input id="shipping" type="number" min="0" step="0.01" value="0">
+              <label for="shipping" class="active">Shipping / Extra</label>
+            </div>
+            <div class="col s12 m6">
+              <ul class="collection summary-list">
+                <li class="collection-item">Subtotal <span id="summarySubtotal" class="secondary-content">0.00</span></li>
+                <li class="collection-item">Tax <span id="summaryTax" class="secondary-content">0.00</span></li>
+                <li class="collection-item">Grand Total <span id="summaryTotal" class="secondary-content"><strong>0.00</strong></span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-field col s12">
+              <textarea id="invoiceNotes" class="materialize-textarea"></textarea>
+              <label for="invoiceNotes">Additional Notes</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="center-align" style="margin: 2rem 0;">
+        <button class="btn-large blue darken-2 waves-effect waves-light" onclick="generatePDF()">
+          <i class="material-icons left">download</i>Download Invoice PDF
+        </button>
+      </div>
     </div>
-  </div>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

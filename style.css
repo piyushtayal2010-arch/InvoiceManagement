@@ -85,3 +85,16 @@ h3 {
   border-bottom: 1px solid #1976d2 !important;
   box-shadow: 0 1px 0 0 #1976d2 !important;
 }
+.invoice-items-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.add-item-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.summary-list .collection-item {
+  font-size: 0.95rem;
+}

@@ -29,7 +29,11 @@ function populateForm() {
   document.getElementById('bankHolder').value = s.bankHolder || '';
   document.getElementById('bankSwift').value = s.bankSwift || '';
   document.getElementById('bankUpi').value = s.bankUpi || '';
-  // update labels for Materialize
+  document.getElementById('defaultCurrency').value = s.defaultCurrency || 'CAD';
+  document.getElementById('defaultTaxPct').value = s.defaultTaxPct ?? 0;
+  document.getElementById('defaultNotes').value = s.defaultNotes || '';
+  document.getElementById('signatoryName').value = s.signatoryName || '';
+  M.FormSelect.init(document.querySelectorAll('select'));
   M.updateTextFields();
 }
 
@@ -44,7 +48,11 @@ function gatherForm() {
     bankAccount: document.getElementById('bankAccount').value,
     bankHolder: document.getElementById('bankHolder').value,
     bankSwift: document.getElementById('bankSwift').value,
-    bankUpi: document.getElementById('bankUpi').value
+    bankUpi: document.getElementById('bankUpi').value,
+    defaultCurrency: document.getElementById('defaultCurrency').value,
+    defaultTaxPct: Number(document.getElementById('defaultTaxPct').value) || 0,
+    defaultNotes: document.getElementById('defaultNotes').value,
+    signatoryName: document.getElementById('signatoryName').value
   };
 }
 
@@ -54,6 +62,6 @@ window.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const settings = gatherForm();
     saveSettings(settings);
-    M.toast({html: 'Settings saved'});
+    M.toast({ html: 'Settings saved' });
   });
 });
