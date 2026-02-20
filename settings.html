@@ -2,98 +2,80 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Invoice Settings</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="grey lighten-4">
-  <div class="container">
-    <!-- navigation -->
-    <nav class="blue darken-2">
-      <div class="nav-wrapper">
-        <a href="#" class="brand-logo center">Invoice App</a>
+<body>
+  <nav class="app-nav"><div class="nav-wrapper container"><a href="#" class="brand-logo">Invoice Workspace</a></div></nav>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a href="index.html"><i class="material-icons">receipt_long</i><span>Invoice Builder</span></a>
+      <a href="clients.html"><i class="material-icons">groups</i><span>Clients</span></a>
+      <a href="services.html"><i class="material-icons">inventory_2</i><span>Services</span></a>
+      <a href="settings.html" class="active-link"><i class="material-icons">tune</i><span>Settings</span></a>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h4>Settings & Template Controls</h4>
+        <p>Customize every reusable invoice value from one place. No personal data is prefilled anymore.</p>
       </div>
-    </nav>
 
-  <!-- custom sidebar -->
-  <div class="sidebar">
-    <a href="index.html"><i class="material-icons">home</i><span class="link-text">Home</span></a>
-    <a href="clients.html"><i class="material-icons">people</i><span class="link-text">Clients</span></a>
-    <a href="services.html"><i class="material-icons">build</i><span class="link-text">Services</span></a>
-    <a href="settings.html"><i class="material-icons">settings</i><span class="link-text">Settings</span></a>
-  </div>
-
-<main class="main-content">
-    <div class="container">
-      <h3 class="center-align blue-text text-darken-2">Settings</h3>
-
-    <div class="card">
-      <div class="card-content">
-        <span class="card-title">Company Info</span>
+      <div class="card"><div class="card-content">
+        <span class="card-title">Brand / Business</span>
         <div class="row">
-          <div class="input-field col s12">
-            <input id="companyName" type="text">
-            <label for="companyName">Company Name</label>
-          </div>
-          <div class="input-field col s12">
-            <textarea id="companyAddress" class="materialize-textarea"></textarea>
-            <label for="companyAddress">Address</label>
-          </div>
-          <div class="input-field col s6">
-            <input id="companyEmail" type="email">
-            <label for="companyEmail">Email</label>
-          </div>
-          <div class="input-field col s6">
-            <input id="companyPhone" type="text">
-            <label for="companyPhone">Phone</label>
-          </div>
-          <div class="input-field col s12">
-            <input id="companyGstin" type="text">
-            <label for="companyGstin">GSTIN</label>
-          </div>
+          <div class="input-field col s12 m6"><input id="companyName" type="text"><label for="companyName">Company Name</label></div>
+          <div class="input-field col s12 m6"><input id="companyTagline" type="text"><label for="companyTagline">Tagline</label></div>
+          <div class="input-field col s12"><textarea id="companyAddress" class="materialize-textarea"></textarea><label for="companyAddress">Address</label></div>
+          <div class="input-field col s12 m6"><input id="companyEmail" type="email"><label for="companyEmail">Email</label></div>
+          <div class="input-field col s12 m6"><input id="companyPhone" type="text"><label for="companyPhone">Phone</label></div>
+          <div class="input-field col s12 m6"><input id="companyGstin" type="text"><label for="companyGstin">Tax ID / GSTIN</label></div>
+          <div class="input-field col s12 m6"><input id="signatoryName" type="text"><label for="signatoryName">Signatory Name</label></div>
         </div>
-      </div>
-    </div>
+      </div></div>
 
-    <div class="card">
-      <div class="card-content">
-        <span class="card-title">Banking Details</span>
+      <div class="card"><div class="card-content">
+        <span class="card-title">Invoice Defaults</span>
         <div class="row">
-          <div class="input-field col s12">
-            <input id="bankName" type="text">
-            <label for="bankName">Bank Name</label>
+          <div class="input-field col s12 m3">
+            <select id="defaultCurrency">
+              <option value="CAD">CAD</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="INR">INR</option>
+            </select>
+            <label>Default Currency</label>
           </div>
-          <div class="input-field col s12">
-            <input id="bankAccount" type="text">
-            <label for="bankAccount">Account Number</label>
-          </div>
-          <div class="input-field col s12">
-            <input id="bankHolder" type="text">
-            <label for="bankHolder">Account Holder Name</label>
-          </div>
-          <div class="input-field col s12">
-            <input id="bankSwift" type="text">
-            <label for="bankSwift">SWIFT Code</label>
-          </div>
-          <div class="input-field col s12">
-            <input id="bankUpi" type="text">
-            <label for="bankUpi">UPI ID</label>
-          </div>
+          <div class="input-field col s12 m3"><input id="defaultTaxPct" type="number" min="0" step="0.01"><label for="defaultTaxPct">Default Tax %</label></div>
+          <div class="input-field col s12 m3"><input id="defaultPaymentTerms" type="number" min="0" step="1"><label for="defaultPaymentTerms">Default Terms (days)</label></div>
+          <div class="input-field col s12 m3"><input id="invoicePrefix" type="text"><label for="invoicePrefix">Invoice Prefix</label></div>
+          <div class="input-field col s12 m6"><input id="invoiceTitle" type="text"><label for="invoiceTitle">Invoice Title</label></div>
+          <div class="input-field col s12 m6"><input id="taxLabel" type="text"><label for="taxLabel">Tax Label (example: VAT / GST)</label></div>
+          <div class="input-field col s12"><textarea id="defaultNotes" class="materialize-textarea"></textarea><label for="defaultNotes">Default Notes</label></div>
         </div>
-      </div>
-    </div>
+      </div></div>
 
-    <div class="row">
-      <div class="col s6">
-        <a href="index.html" class="btn grey darken-1">Back to Invoice</a>
+      <div class="card"><div class="card-content">
+        <span class="card-title">Bank / Payment Details</span>
+        <div class="row">
+          <div class="input-field col s12 m6"><input id="bankName" type="text"><label for="bankName">Bank Name</label></div>
+          <div class="input-field col s12 m6"><input id="bankAccount" type="text"><label for="bankAccount">Account Number</label></div>
+          <div class="input-field col s12 m6"><input id="bankHolder" type="text"><label for="bankHolder">Account Holder</label></div>
+          <div class="input-field col s12 m6"><input id="payableTo" type="text"><label for="payableTo">Payable To Name</label></div>
+          <div class="input-field col s12 m6"><input id="bankSwift" type="text"><label for="bankSwift">SWIFT / IFSC</label></div>
+          <div class="input-field col s12"><input id="bankUpi" type="text"><label for="bankUpi">UPI / Payment Handle</label></div>
+        </div>
+      </div></div>
+
+      <div class="right-align">
+        <a href="index.html" class="btn secondary">Back</a>
+        <button id="saveSettings" class="btn">Save Settings</button>
       </div>
-      <div class="col s6 right-align">
-        <button id="saveSettings" class="btn blue darken-2">Save Settings</button>
-      </div>
-    </div>
+    </main>
   </div>
-  </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script src="settings.js"></script>
