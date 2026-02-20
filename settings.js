@@ -1,5 +1,3 @@
-// settings.js handles reading and writing invoice settings to localStorage
-
 const STORAGE_KEY = 'invoiceSettings';
 
 function loadSettings() {
@@ -19,49 +17,43 @@ function saveSettings(settings) {
 
 function populateForm() {
   const s = loadSettings();
-  document.getElementById('companyName').value = s.companyName || '';
-  document.getElementById('companyAddress').value = s.companyAddress || '';
-  document.getElementById('companyEmail').value = s.companyEmail || '';
-  document.getElementById('companyPhone').value = s.companyPhone || '';
-  document.getElementById('companyGstin').value = s.companyGstin || '';
-  document.getElementById('bankName').value = s.bankName || '';
-  document.getElementById('bankAccount').value = s.bankAccount || '';
-  document.getElementById('bankHolder').value = s.bankHolder || '';
-  document.getElementById('bankSwift').value = s.bankSwift || '';
-  document.getElementById('bankUpi').value = s.bankUpi || '';
+  const fields = [
+    'companyName', 'companyTagline', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin',
+    'bankName', 'bankAccount', 'bankHolder', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
+    'defaultTaxPct', 'defaultPaymentTerms', 'invoicePrefix', 'invoiceTitle', 'taxLabel'
+  ];
+
+  fields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = s[id] ?? '';
+  });
+
   document.getElementById('defaultCurrency').value = s.defaultCurrency || 'CAD';
-  document.getElementById('defaultTaxPct').value = s.defaultTaxPct ?? 0;
-  document.getElementById('defaultNotes').value = s.defaultNotes || '';
-  document.getElementById('signatoryName').value = s.signatoryName || '';
   M.FormSelect.init(document.querySelectorAll('select'));
   M.updateTextFields();
 }
 
 function gatherForm() {
-  return {
-    companyName: document.getElementById('companyName').value,
-    companyAddress: document.getElementById('companyAddress').value,
-    companyEmail: document.getElementById('companyEmail').value,
-    companyPhone: document.getElementById('companyPhone').value,
-    companyGstin: document.getElementById('companyGstin').value,
-    bankName: document.getElementById('bankName').value,
-    bankAccount: document.getElementById('bankAccount').value,
-    bankHolder: document.getElementById('bankHolder').value,
-    bankSwift: document.getElementById('bankSwift').value,
-    bankUpi: document.getElementById('bankUpi').value,
-    defaultCurrency: document.getElementById('defaultCurrency').value,
-    defaultTaxPct: Number(document.getElementById('defaultTaxPct').value) || 0,
-    defaultNotes: document.getElementById('defaultNotes').value,
-    signatoryName: document.getElementById('signatoryName').value
-  };
+  const out = {};
+  [
+    'companyName', 'companyTagline', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin',
+    'bankName', 'bankAccount', 'bankHolder', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
+    'invoicePrefix', 'invoiceTitle', 'taxLabel'
+  ].forEach((id) => {
+    out[id] = document.getElementById(id).value.trim();
+  });
+
+  out.defaultCurrency = document.getElementById('defaultCurrency').value;
+  out.defaultTaxPct = Number(document.getElementById('defaultTaxPct').value) || 0;
+  out.defaultPaymentTerms = Number(document.getElementById('defaultPaymentTerms').value) || 0;
+  return out;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   populateForm();
   document.getElementById('saveSettings').addEventListener('click', (e) => {
     e.preventDefault();
-    const settings = gatherForm();
-    saveSettings(settings);
+    saveSettings(gatherForm());
     M.toast({ html: 'Settings saved' });
   });
 });
