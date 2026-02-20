@@ -211,76 +211,98 @@ function generatePDF() {
   try {
     if (!validateInvoiceBeforeDownload()) return;
 
-    const settings = getSettings();
-    const invoiceNo = readInput('invoiceNo');
-    const invoiceDate = readInput('invoiceDate');
-    const clientName = readInput('clientName');
-    const clientAddress = readInput('clientAddress');
-    const clientEmail = readInput('clientEmail');
-    const clientPhone = readInput('clientPhone');
-    const paymentTerms = Number(document.getElementById('paymentTerms').value) || 0;
-    const notes = readInput('invoiceNotes') || settings.defaultNotes || '';
-    const currency = getCurrency();
-
-    const issueDate = new Date(invoiceDate);
-    const dueDate = new Date(issueDate);
-    dueDate.setDate(dueDate.getDate() + paymentTerms);
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    doc.setLineHeightFactor(1.2);
 
-    const companyName = settings.companyName || 'Company Name';
-    const companyTagline = settings.companyTagline || '';
-    const companyAddress = settings.companyAddress || 'Company address not set';
-    const companyContact = [settings.companyPhone, settings.companyEmail].filter(Boolean).join(' | ');
-    const taxId = settings.companyGstin || '';
-    const invoiceTitle = settings.invoiceTitle || 'INVOICE';
-    const taxLabel = settings.taxLabel || 'Tax';
+    const invoiceNo = document.getElementById('invoiceNo').value;
+    const invoiceDate = document.getElementById('invoiceDate').value;
+    const client = document.getElementById('clientName').value;
+    const clientAddress = document.getElementById('clientAddress').value;
+    const email = document.getElementById('clientEmail').value;
+    const phone = document.getElementById('clientPhone').value;
+    const paymentTerms = document.getElementById('paymentTerms')?.value || '';
+    const notes = document.getElementById('invoiceNotes')?.value || '';
+
+    let dueDate = '';
+    if (invoiceDate) {
+      const inv = new Date(invoiceDate);
+      const days = parseInt(paymentTerms, 10) || 0;
+      inv.setDate(inv.getDate() + days);
+      dueDate = inv.toISOString().slice(0, 10);
+    }
+
+    const settings = getSettings();
+    const name = settings.companyName || 'Company Name';
+    const address = settings.companyAddress || 'Company address not configured';
+    const contact = (settings.companyPhone ? `${settings.companyPhone} | ` : '') + (settings.companyEmail || 'Email not configured');
+    const gstin = settings.companyGstin ? `GSTIN : ${settings.companyGstin}` : '';
+    const bankName = settings.bankName || 'Bank not configured';
+    const bankAcct = settings.bankAccount || 'Account number not configured';
+    const bankHolder = settings.bankHolder || 'Account holder not configured';
+    const bankSwift = settings.bankSwift || 'Code not configured';
+    const bankUpi = settings.bankUpi || 'Payment handle not configured';
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text(companyName, 20, 18);
-    doc.setFont('helvetica', 'normal');
+    doc.text(name, 20, 20);
     doc.setFontSize(9);
-    if (companyTagline) doc.text(companyTagline, 20, 23);
-    let lineY = companyTagline ? 28 : 23;
-    companyAddress.split('\n').forEach((line) => {
-      doc.text(line, 20, lineY);
-      lineY += 4;
+    doc.setFont('helvetica', 'normal');
+    let ay = 25;
+    address.split('\n').forEach((line) => {
+      doc.text(line, 20, ay);
+      ay += 4;
     });
-    if (companyContact) {
-      doc.text(companyContact, 20, lineY);
-      lineY += 4;
+    doc.text(contact, 20, ay);
+    ay += 4;
+    if (gstin) {
+      doc.text(gstin, 20, ay);
+      ay += 4;
     }
-    if (taxId) doc.text(`Tax ID: ${taxId}`, 20, lineY);
 
-    doc.setFont('helvetica', 'bold');
+    doc.setLineWidth(0.5);
+    doc.line(20, 40, 190, 40);
+
     doc.setFontSize(20);
-    doc.text(invoiceTitle, 190, 24, { align: 'right' });
-
-    const invoiceLabel = settings.invoicePrefix ? `${settings.invoicePrefix}-${invoiceNo}` : invoiceNo;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(`Invoice #: ${invoiceLabel}`, 190, 32, { align: 'right' });
-    doc.text(`Invoice Date: ${invoiceDate}`, 190, 37, { align: 'right' });
-    doc.text(`Due Date: ${dueDate.toISOString().slice(0, 10)}`, 190, 42, { align: 'right' });
-    doc.text(`Currency: ${currency}`, 190, 47, { align: 'right' });
-
-    doc.line(20, 52, 190, 52);
     doc.setFont('helvetica', 'bold');
-    doc.text('Bill To', 20, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.text(clientName, 20, 66);
-    clientAddress.split('\n').forEach((line, i) => doc.text(line, 20, 72 + i * 5));
-    doc.text(clientEmail, 20, 82 + clientAddress.split('\n').length * 5);
-    if (clientPhone) doc.text(clientPhone, 20, 87 + clientAddress.split('\n').length * 5);
+    doc.text('INVOICE', 105, 52, null, null, 'center');
 
-    const body = invoiceItems.map((item, idx) => {
-      const taxAmount = (item.amount * item.taxPct) / 100;
+    const invY = 60;
+    const rightX = 190;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Invoice # : ${invoiceNo}`, rightX, invY - 2, null, null, 'right');
+    doc.text(`Invoice Date : ${invoiceDate}`, rightX, invY + 2, null, null, 'right');
+    doc.text(`Currency : ${getCurrency()}`, rightX, invY + 6, null, null, 'right');
+    if (dueDate) {
+      doc.text(`Due Date : ${dueDate}`, rightX, invY + 10, null, null, 'right');
+    }
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To', 20, invY);
+    doc.setFont('helvetica', 'normal');
+    let billY = invY + 5;
+    doc.text(client, 20, billY);
+    billY += 5;
+    clientAddress
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length)
+      .forEach((line) => {
+        doc.text(line, 20, billY);
+        billY += 5;
+      });
+    doc.text(email, 20, billY);
+    billY += 5;
+    doc.text(phone, 20, billY);
+
+    const tableBody = invoiceItems.map((item, index) => {
+      const taxAmount = item.amount * (item.taxPct / 100);
       return [
-        String(idx + 1),
-        `${item.serviceName}${item.hsn ? `\n${item.hsn}` : ''}${item.serviceDesc ? `\n${item.serviceDesc}` : ''}${item.period ? `\n${item.period}` : ''}`,
-        item.qty.toFixed(0),
+        `${index + 1}`,
+        `${item.serviceName}\nHSN: ${item.hsn || '-'}${item.serviceDesc ? `\n${item.serviceDesc}` : ''}${item.period ? `\n${item.period}` : ''}`,
+        item.qty.toString(),
         item.rate.toFixed(2),
         `${item.taxPct.toFixed(2)}%`,
         taxAmount.toFixed(2),
@@ -289,52 +311,71 @@ function generatePDF() {
     });
 
     doc.autoTable({
-      startY: 98,
+      startY: billY + 8,
       margin: { left: 20, right: 20 },
-      head: [['#', 'Service', 'Qty', 'Rate', `${taxLabel} %`, `${taxLabel} Amt`, 'Line Total']],
-      body,
-      headStyles: { fillColor: [91, 110, 245] },
-      styles: { fontSize: 9 },
-      theme: 'grid',
-      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' } }
+      head: [[
+        'Sr No.',
+        'Services',
+        'Qty',
+        'Rate',
+        'Tax %',
+        'Tax Amt',
+        'Amount'
+      ]],
+      body: tableBody,
+      styles: { fontSize: 9, overflow: 'linebreak' },
+      headStyles: { fillColor: [0, 70, 136], textColor: 255 },
+      columnStyles: {
+        0: { halign: 'center' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+        6: { halign: 'right' }
+      },
+      theme: 'grid'
     });
 
     const totals = computeTotals();
-    const y = doc.lastAutoTable.finalY + 8;
-    doc.text('Subtotal', 145, y);
-    doc.text(formatMoney(totals.subtotal), 190, y, { align: 'right' });
-    doc.text(taxLabel, 145, y + 6);
-    doc.text(formatMoney(totals.tax), 190, y + 6, { align: 'right' });
-    doc.text('Discount', 145, y + 12);
-    doc.text(`- ${formatMoney(totals.discount)}`, 190, y + 12, { align: 'right' });
-    doc.text('Shipping', 145, y + 18);
-    doc.text(formatMoney(totals.shipping), 190, y + 18, { align: 'right' });
+    const finalY = doc.lastAutoTable.finalY + 6;
+    doc.text('Subtotal', 140, finalY);
+    doc.text(formatMoney(totals.subtotal), 190, finalY, null, null, 'right');
+    doc.text('Tax', 140, finalY + 6);
+    doc.text(formatMoney(totals.tax), 190, finalY + 6, null, null, 'right');
+    doc.text('Discount', 140, finalY + 12);
+    doc.text(`- ${formatMoney(totals.discount)}`, 190, finalY + 12, null, null, 'right');
+    doc.text('Shipping / Extra', 140, finalY + 18);
+    doc.text(formatMoney(totals.shipping), 190, finalY + 18, null, null, 'right');
     doc.setFont('helvetica', 'bold');
-    doc.text('Grand Total', 145, y + 26);
-    doc.text(formatMoney(totals.grandTotal), 190, y + 26, { align: 'right' });
-
+    doc.text('Grand Total', 140, finalY + 26);
+    doc.text(formatMoney(totals.grandTotal), 190, finalY + 26, null, null, 'right');
     doc.setFont('helvetica', 'normal');
+
     doc.setFontSize(9);
-    doc.text('Notes', 20, y + 10);
+    doc.text('Notes', 20, finalY + 10);
     doc.setFontSize(8);
-    doc.text(notes || 'No notes provided.', 20, y + 15, { maxWidth: 100 });
+    const composedNotes = notes || settings.defaultNotes || 'Thank you for your business.';
+    doc.text(composedNotes, 20, finalY + 15, { maxWidth: 110 });
 
-    const bankY = y + 35;
-    doc.rect(20, bankY, 85, 34);
-    doc.rect(110, bankY, 85, 34);
+    const boxY = finalY + 35;
+    doc.rect(20, boxY, 85, 30);
+    doc.rect(110, boxY, 85, 30);
     doc.setFontSize(9);
-    doc.text('Payable To', 22, bankY + 6);
-    doc.text(settings.bankHolder || 'Account holder not set', 22, bankY + 12);
-    doc.text('Bank Details', 112, bankY + 6);
-    doc.text(`Bank: ${settings.bankName || '-'}`, 112, bankY + 12);
-    doc.text(`Account: ${settings.bankAccount || '-'}`, 112, bankY + 17);
-    doc.text(`SWIFT/IFSC: ${settings.bankSwift || '-'}`, 112, bankY + 22);
-    doc.text(`UPI/Handle: ${settings.bankUpi || '-'}`, 112, bankY + 27);
+    doc.text('Payable To', 22, boxY + 5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(bankHolder, 22, boxY + 12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Bank Details', 112, boxY + 5);
+    doc.text(`BANK NAME: ${bankName}`, 112, boxY + 10);
+    doc.text(`ACCOUNT HOLDER NAME: ${bankHolder}`, 112, boxY + 14);
+    doc.text(`ACCOUNT NUMBER: ${bankAcct}`, 112, boxY + 18);
+    doc.text(`SWIFT CODE: ${bankSwift}`, 112, boxY + 22);
+    doc.text(`UPI ID: ${bankUpi}`, 112, boxY + 26);
 
-    doc.text(settings.signatoryName || 'Authorized Signatory', 145, bankY + 41);
-    doc.text('Signature', 150, bankY + 46);
+    doc.text(settings.signatoryName || 'Authorized Signatory', 145, boxY + 40);
+    doc.text('Signature', 150, boxY + 46);
 
-    doc.save(`Invoice_${invoiceLabel}.pdf`);
+    doc.save(`Invoice_${invoiceNo || 'Draft'}.pdf`);
   } catch (err) {
     console.error('generatePDF error', err);
     alert(`Failed to generate PDF: ${err.message}`);
