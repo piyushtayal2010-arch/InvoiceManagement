@@ -207,7 +207,7 @@ function validateInvoiceBeforeDownload() {
   return true;
 }
 
-function generatePDF() {
+function generatePDF(previewOnly = false) {
   try {
     if (!validateInvoiceBeforeDownload()) return;
 
@@ -242,6 +242,8 @@ function generatePDF() {
     const bankHolder = settings.bankHolder || 'Account holder not configured';
     const bankSwift = settings.bankSwift || 'Code not configured';
     const bankUpi = settings.bankUpi || 'Payment handle not configured';
+    const payableTo = settings.payableTo || bankHolder;
+    const displayInvoiceNo = `${settings.invoicePrefix ? `${settings.invoicePrefix}-` : ''}${invoiceNo || 'Draft'}`;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
@@ -271,7 +273,7 @@ function generatePDF() {
     const rightX = 190;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Invoice # : ${invoiceNo}`, rightX, invY - 2, null, null, 'right');
+    doc.text(`Invoice # : ${displayInvoiceNo}`, rightX, invY - 2, null, null, 'right');
     doc.text(`Invoice Date : ${invoiceDate}`, rightX, invY + 2, null, null, 'right');
     doc.text(`Currency : ${getCurrency()}`, rightX, invY + 6, null, null, 'right');
     if (dueDate) {
@@ -363,7 +365,7 @@ function generatePDF() {
     doc.setFontSize(9);
     doc.text('Payable To', 22, boxY + 5);
     doc.setFont('helvetica', 'bold');
-    doc.text(bankHolder, 22, boxY + 12);
+    doc.text(payableTo, 22, boxY + 12);
     doc.setFont('helvetica', 'normal');
     doc.text('Bank Details', 112, boxY + 5);
     doc.text(`BANK NAME: ${bankName}`, 112, boxY + 10);
@@ -375,7 +377,13 @@ function generatePDF() {
     doc.text(settings.signatoryName || 'Authorized Signatory', 145, boxY + 40);
     doc.text('Signature', 150, boxY + 46);
 
-    doc.save(`Invoice_${invoiceNo || 'Draft'}.pdf`);
+    if (previewOnly) {
+      const pdfUrl = doc.output('bloburl');
+      window.open(pdfUrl, '_blank');
+      return;
+    }
+
+    doc.save(`Invoice_${displayInvoiceNo}.pdf`);
   } catch (err) {
     console.error('generatePDF error', err);
     alert(`Failed to generate PDF: ${err.message}`);
@@ -405,4 +413,9 @@ window.addEventListener('DOMContentLoaded', () => {
   renderItemTable();
 });
 
+function previewPDF() {
+  generatePDF(true);
+}
+
 window.generatePDF = generatePDF;
+window.previewPDF = previewPDF;

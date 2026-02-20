@@ -19,7 +19,7 @@ function populateForm() {
   const s = loadSettings();
   const fields = [
     'companyName', 'companyTagline', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin',
-    'bankName', 'bankAccount', 'bankHolder', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
+    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
     'defaultTaxPct', 'defaultPaymentTerms', 'invoicePrefix', 'invoiceTitle', 'taxLabel'
   ];
 
@@ -37,7 +37,7 @@ function gatherForm() {
   const out = {};
   [
     'companyName', 'companyTagline', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin',
-    'bankName', 'bankAccount', 'bankHolder', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
+    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
     'invoicePrefix', 'invoiceTitle', 'taxLabel'
   ].forEach((id) => {
     out[id] = document.getElementById(id).value.trim();
