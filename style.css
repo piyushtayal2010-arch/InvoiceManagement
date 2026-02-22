@@ -14,6 +14,16 @@
 
 * { box-sizing: border-box; }
 
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+}
+
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
@@ -24,11 +34,66 @@ body {
 .app-nav {
   background: linear-gradient(120deg, var(--primary), #7a62f6) !important;
   box-shadow: 0 10px 24px rgba(76, 94, 235, 0.25);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100;
+  height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.app-nav .nav-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  margin: 0;
+}
+
+.menu-toggle {
+  display: none !important;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-right: 1rem;
+  font-size: 1.5rem;
+  z-index: 101;
+  min-width: auto;
+}
+
+.menu-toggle i {
+  color: white;
+  display: flex;
 }
 
 .app-shell {
   display: flex;
   min-height: 100vh;
+  margin-top: 64px;
+}
+
+/* Backdrop for mobile menu */
+.app-shell::before {
+  content: '';
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 98;
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+.app-shell.menu-open::before {
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
 }
 
 .sidebar {
@@ -41,6 +106,8 @@ body {
   bottom: 0;
   left: 0;
   border-right: 1px solid #1f2937;
+  z-index: 50;
+  overflow-y: auto;
 }
 
 .sidebar a {
@@ -148,22 +215,180 @@ body {
   font-size: 0.92rem;
 }
 
+.invoice-no-group {
+  position: relative;
+  --invoice-prefix-offset: 0px;
+}
+
+.invoice-no-group .prefix.invoice-prefix-inline {
+  display: none;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 3rem;
+  pointer-events: none;
+  width: auto;
+}
+
+.invoice-no-group input#invoiceNo {
+  margin-left: var(--invoice-prefix-offset) !important;
+  width: calc(100% - var(--invoice-prefix-offset)) !important;
+}
+
+/* Tablet and below (Hamburger Menu) */
 @media (max-width: 992px) {
-  .sidebar {
-    position: static;
+  .menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .app-nav {
+    position: fixed;
+  }
+
+  .app-nav .nav-wrapper {
+    padding: 0 0.5rem;
     width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #1f2937;
-    top: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .brand-logo {
+    flex: 1;
+    margin-left: 0.5rem !important;
+    font-size: 1.1rem !important;
+  }
+
+  .app-shell {
+    flex-direction: column;
+    margin-top: 64px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 64px;
+    left: -100%;
+    width: 260px;
+    height: calc(100vh - 64px);
+    background: #111827;
+    z-index: 99;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    border-right: 1px solid #1f2937;
+    padding: 1.25rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .sidebar.mobile-open {
+    left: 0;
+  }
+
+  .sidebar a {
+    padding: 0.75rem 0.9rem;
+    font-size: 1rem;
+    margin-bottom: 0;
+  }
+
+  .sidebar a span {
+    display: inline;
   }
 
   .main-content {
     margin-left: 0;
     width: 100%;
-    padding: 1rem;
+    padding: 1.5rem;
+  }
+
+  .page-header {
+    padding: 1rem 1.2rem;
+  }
+
+  .page-header h4 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Mobile phones (Extra adjustments) */
+@media (max-width: 600px) {
+  .app-nav {
+    height: 56px;
+  }
+
+  .app-nav .nav-wrapper {
+    padding: 0 0.25rem;
+  }
+
+  .brand-logo {
+    font-size: 1rem !important;
   }
 
   .app-shell {
-    flex-direction: column;
+    margin-top: 56px;
+  }
+
+  .sidebar {
+    top: 56px;
+    height: calc(100vh - 56px);
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .page-header {
+    padding: 0.8rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-header h4 {
+    font-size: 1.25rem;
+  }
+
+  .page-header p {
+    font-size: 0.9rem;
+  }
+
+  .row .col {
+    padding: 0.25rem;
+  }
+
+  .input-field {
+    margin-bottom: 1rem;
+  }
+
+  .card .card-content {
+    padding: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+  }
+
+  .btn,
+  .btn-large {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .invoice-items-wrap {
+    margin-top: 0.5rem;
+    border-radius: 8px;
+  }
+
+  #itemTable {
+    font-size: 0.85rem;
+  }
+
+  #itemTable th,
+  #itemTable td {
+    padding: 0.5rem;
   }
 }

@@ -9,7 +9,14 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <nav class="app-nav"><div class="nav-wrapper container"><a href="#" class="brand-logo">Invoice Workspace</a></div></nav>
+  <nav class="app-nav">
+    <div class="nav-wrapper container">
+      <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
+        <i class="material-icons">menu</i>
+      </button>
+      <a href="#" class="brand-logo">Invoice Workspace</a>
+    </div>
+  </nav>
   <div class="app-shell">
     <aside class="sidebar">
       <a href="index.html"><i class="material-icons">receipt_long</i><span>Invoice Builder</span></a>
@@ -39,5 +46,6 @@
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script src="services.js"></script>
+  <script src="nav.js"></script>
 </body>
 </html>

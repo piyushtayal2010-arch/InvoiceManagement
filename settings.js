@@ -18,9 +18,9 @@ function saveSettings(settings) {
 function populateForm() {
   const s = loadSettings();
   const fields = [
-    'companyName', 'companyTagline', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin',
-    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
-    'defaultTaxPct', 'defaultPaymentTerms', 'invoicePrefix', 'invoiceTitle', 'taxLabel'
+    'companyName', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin', 'signatoryName',
+    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes',
+    'defaultTaxPct', 'defaultPaymentTerms', 'invoicePrefix'
   ];
 
   fields.forEach((id) => {
@@ -36,9 +36,9 @@ function populateForm() {
 function gatherForm() {
   const out = {};
   [
-    'companyName', 'companyTagline', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin',
-    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes', 'signatoryName',
-    'invoicePrefix', 'invoiceTitle', 'taxLabel'
+    'companyName', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin', 'signatoryName',
+    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes',
+    'invoicePrefix'
   ].forEach((id) => {
     out[id] = document.getElementById(id).value.trim();
   });

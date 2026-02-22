@@ -13,6 +13,9 @@
 <body>
   <nav class="app-nav">
     <div class="nav-wrapper container">
+      <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu">
+        <i class="material-icons">menu</i>
+      </button>
       <a href="#" class="brand-logo">Invoice Workspace</a>
     </div>
   </nav>
@@ -36,7 +39,8 @@
           <span class="card-title">Invoice Basics</span>
           <p class="section-help">All required fields must be filled before downloading.</p>
           <div class="row">
-            <div class="input-field col s12 m3">
+            <div class="input-field col s12 m3 invoice-no-group">
+              <span id="invoicePrefixInline" class="prefix invoice-prefix-inline"></span>
               <input id="invoiceNo" type="text">
               <label for="invoiceNo">Invoice No *</label>
             </div>
@@ -127,7 +131,7 @@
             </div>
             <div class="input-field col s6 m2">
               <input id="itemTax" type="number" min="0" step="0.01" value="0">
-              <label for="itemTax" class="active">Tax %</label>
+              <label for="itemTax" class="active">IGST %</label>
             </div>
             <div class="input-field col s12 m2">
               <button id="addItem" class="btn" type="button"><i class="material-icons left">add</i>Add Item</button>
@@ -168,7 +172,9 @@
             <div class="col s12 m6">
               <ul class="collection summary-list">
                 <li class="collection-item">Subtotal <span id="summarySubtotal" class="secondary-content">0.00</span></li>
-                <li class="collection-item">Tax <span id="summaryTax" class="secondary-content">0.00</span></li>
+                <li class="collection-item">IGST <span id="summaryTax" class="secondary-content">0.00</span></li>
+                <li class="collection-item">Discount (Flat) <span id="summaryDiscount" class="secondary-content">0.00</span></li>
+                <li class="collection-item">Shipping / Additional <span id="summaryShipping" class="secondary-content">0.00</span></li>
                 <li class="collection-item">Grand Total <span id="summaryTotal" class="secondary-content"><strong>0.00</strong></span></li>
               </ul>
             </div>
@@ -191,5 +197,6 @@
   <script src="services.js"></script>
   <script src="clients.js"></script>
   <script src="app.js"></script>
+  <script src="nav.js"></script>
 </body>
 </html>

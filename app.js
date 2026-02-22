@@ -93,6 +93,28 @@ function readInput(id) {
   return document.getElementById(id).value.trim();
 }
 
+function buildDisplayInvoiceNo(prefix, invoiceNo) {
+  return `${prefix ? `${prefix}` : ''}${invoiceNo || 'Draft'}`;
+}
+
+function renderInvoicePrefixInline(settings = getSettings()) {
+  const prefixEl = document.getElementById('invoicePrefixInline');
+  const groupEl = document.querySelector('.invoice-no-group');
+  if (!prefixEl || !groupEl) return;
+
+  const prefix = String(settings.invoicePrefix || '').trim();
+  prefixEl.textContent = prefix;
+  if (!prefix) {
+    prefixEl.style.display = 'none';
+    groupEl.style.setProperty('--invoice-prefix-offset', '0px');
+    return;
+  }
+
+  prefixEl.style.display = 'block';
+  const prefixWidth = Math.ceil(prefixEl.getBoundingClientRect().width);
+  groupEl.style.setProperty('--invoice-prefix-offset', `${prefixWidth + 12}px`);
+}
+
 function collectCurrentItemFromForm() {
   const serviceName = readInput('serviceName');
   const hsn = readInput('hsn');
@@ -143,14 +165,22 @@ function computeTotals() {
   const discount = Number(document.getElementById('discount').value) || 0;
   const shipping = Number(document.getElementById('shipping').value) || 0;
   const subtotal = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
-  const tax = invoiceItems.reduce((sum, item) => sum + (item.amount * item.taxPct) / 100, 0);
-  return { subtotal, tax, discount, shipping, grandTotal: Math.max(0, subtotal + tax + shipping - discount) };
+  const igstTax = invoiceItems.reduce((sum, item) => sum + (item.amount * item.taxPct) / 100, 0);
+  return {
+    subtotal,
+    igstTax,
+    discount,
+    shipping,
+    grandTotal: Math.max(0, subtotal + igstTax + shipping - discount)
+  };
 }
 
 function renderSummary() {
   const totals = computeTotals();
   document.getElementById('summarySubtotal').textContent = formatMoney(totals.subtotal);
-  document.getElementById('summaryTax').textContent = formatMoney(totals.tax);
+  document.getElementById('summaryTax').textContent = formatMoney(totals.igstTax);
+  document.getElementById('summaryDiscount').textContent = formatMoney(totals.discount);
+  document.getElementById('summaryShipping').textContent = formatMoney(totals.shipping);
   document.getElementById('summaryTotal').textContent = formatMoney(totals.grandTotal);
 }
 
@@ -243,7 +273,7 @@ function generatePDF(previewOnly = false) {
     const bankSwift = settings.bankSwift || 'Code not configured';
     const bankUpi = settings.bankUpi || 'Payment handle not configured';
     const payableTo = settings.payableTo || bankHolder;
-    const displayInvoiceNo = `${settings.invoicePrefix ? `${settings.invoicePrefix}-` : ''}${invoiceNo || 'Draft'}`;
+    const displayInvoiceNo = buildDisplayInvoiceNo(settings.invoicePrefix, invoiceNo);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
@@ -306,8 +336,7 @@ function generatePDF(previewOnly = false) {
         `${item.serviceName}\nHSN: ${item.hsn || '-'}${item.serviceDesc ? `\n${item.serviceDesc}` : ''}${item.period ? `\n${item.period}` : ''}`,
         item.qty.toString(),
         item.rate.toFixed(2),
-        `${item.taxPct.toFixed(2)}%`,
-        taxAmount.toFixed(2),
+        { taxAmount: taxAmount.toFixed(2), taxPct: item.taxPct.toFixed(2) },
         item.amount.toFixed(2)
       ];
     });
@@ -317,49 +346,103 @@ function generatePDF(previewOnly = false) {
       margin: { left: 20, right: 20 },
       head: [[
         'Sr No.',
-        'Services',
+        'Product/Services',
         'Qty',
         'Rate',
-        'Tax %',
-        'Tax Amt',
+        'Tax',
         'Amount'
       ]],
       body: tableBody,
       styles: { fontSize: 9, overflow: 'linebreak' },
       headStyles: { fillColor: [0, 70, 136], textColor: 255 },
       columnStyles: {
-        0: { halign: 'center' },
+        0: { halign: 'left', cellWidth: 15 },
+        1: { cellWidth: 69 },
         2: { halign: 'right' },
         3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right' }
+        4: { halign: 'center', cellWidth: 23 },
+        5: { halign: 'right', cellWidth: 26 }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'head' && [2, 3, 4, 5].includes(data.column.index)) {
+          data.cell.styles.halign = 'right';
+        }
+        if (data.section === 'body' && data.column.index === 4 && data.cell.raw && typeof data.cell.raw === 'object') {
+          data.cell.text = [''];
+        }
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body' || data.column.index !== 4 || !data.cell.raw || typeof data.cell.raw !== 'object') return;
+
+        const pad = 1.5;
+        const rightX = data.cell.x + data.cell.width - pad;
+        const leftX = data.cell.x + pad;
+        const maxW = Math.max(0, data.cell.width - pad * 2);
+        const amountText = String(data.cell.raw.taxAmount);
+        const igstText = `IGST:${data.cell.raw.taxPct}%`;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(amountText, rightX, data.cell.y + 5, { align: 'right', maxWidth: maxW });
+
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(6);
+        doc.text(igstText, rightX, data.cell.y + 8, { align: 'right', maxWidth: maxW });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
       },
       theme: 'grid'
     });
 
     const totals = computeTotals();
     const finalY = doc.lastAutoTable.finalY + 6;
-    doc.text('Subtotal', 140, finalY);
-    doc.text(formatMoney(totals.subtotal), 190, finalY, null, null, 'right');
-    doc.text('Tax', 140, finalY + 6);
-    doc.text(formatMoney(totals.tax), 190, finalY + 6, null, null, 'right');
-    doc.text('Discount', 140, finalY + 12);
-    doc.text(`- ${formatMoney(totals.discount)}`, 190, finalY + 12, null, null, 'right');
-    doc.text('Shipping / Extra', 140, finalY + 18);
-    doc.text(formatMoney(totals.shipping), 190, finalY + 18, null, null, 'right');
+    const effectiveIgstRate = totals.subtotal > 0 ? (totals.igstTax / totals.subtotal) * 100 : 0;
+    const totalBeforeGrand = Math.max(0, totals.subtotal + totals.igstTax);
+    const hasShipping = totals.shipping > 0;
+    const hasDiscount = totals.discount > 0;
+    const labelLeftX = 128;
+    const valueRightX = 190;
+    doc.setFontSize(9);
+
+    doc.text('Base Amount', labelLeftX, finalY);
+    doc.text(formatMoney(totals.subtotal), valueRightX, finalY, null, null, 'right');
+    doc.text(`(+) IGST: ${effectiveIgstRate.toFixed(2)}%`, labelLeftX, finalY + 6);
+    doc.text(formatMoney(totals.igstTax), valueRightX, finalY + 6, null, null, 'right');
     doc.setFont('helvetica', 'bold');
-    doc.text('Grand Total', 140, finalY + 26);
-    doc.text(formatMoney(totals.grandTotal), 190, finalY + 26, null, null, 'right');
+    doc.text('Total', labelLeftX, finalY + 12);
+    doc.text(formatMoney(totalBeforeGrand), valueRightX, finalY + 12, null, null, 'right');
     doc.setFont('helvetica', 'normal');
 
+    let extraY = finalY + 18;
+    if (hasShipping) {
+      doc.text('(+) Shipping / Additional', labelLeftX, extraY);
+      doc.text(formatMoney(totals.shipping), valueRightX, extraY, null, null, 'right');
+      extraY += 6;
+    }
+    if (hasDiscount) {
+      doc.text('(-) Discount (Flat)', labelLeftX, extraY);
+      doc.text(formatMoney(totals.discount), valueRightX, extraY, null, null, 'right');
+      extraY += 6;
+    }
+
+    const grandRectY = extraY - 4;
+    const grandTextY = extraY;
+
+    doc.setFillColor(0, 70, 136);
+    doc.rect(labelLeftX, grandRectY, valueRightX - labelLeftX, 6, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text('Grand Total', labelLeftX, grandTextY);
+    doc.text(formatMoney(totals.grandTotal), valueRightX, grandTextY, null, null, 'right');
+    doc.setTextColor(0, 0, 0);
+
     doc.setFontSize(9);
-    doc.text('Notes', 20, finalY + 10);
+    doc.text('Please Note', 20, finalY + 10);
     doc.setFontSize(8);
     const composedNotes = notes || settings.defaultNotes || 'Thank you for your business.';
     doc.text(composedNotes, 20, finalY + 15, { maxWidth: 110 });
 
-    const boxY = finalY + 35;
+    const boxY = grandTextY + 16;
     doc.rect(20, boxY, 85, 30);
     doc.rect(110, boxY, 85, 30);
     doc.setFontSize(9);
@@ -374,8 +457,10 @@ function generatePDF(previewOnly = false) {
     doc.text(`SWIFT CODE: ${bankSwift}`, 112, boxY + 22);
     doc.text(`UPI ID: ${bankUpi}`, 112, boxY + 26);
 
-    doc.text(settings.signatoryName || 'Authorized Signatory', 145, boxY + 40);
-    doc.text('Signature', 150, boxY + 46);
+    const signBoxY = boxY + 34;
+    doc.text(`For ${name}`, 193, signBoxY + 10, null, null, 'right');
+    doc.text(settings.signatoryName || 'Authorized Signatory', 193, signBoxY + 24, null, null, 'right');
+    doc.text('(Authorised Signatory)', 193, signBoxY + 29, null, null, 'right');
 
     if (previewOnly) {
       const pdfUrl = doc.output('bloburl');
@@ -399,10 +484,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (settings.defaultTaxPct !== undefined) document.getElementById('itemTax').value = settings.defaultTaxPct;
   if (settings.defaultPaymentTerms !== undefined) document.getElementById('paymentTerms').value = settings.defaultPaymentTerms;
   if (settings.defaultNotes) document.getElementById('invoiceNotes').value = settings.defaultNotes;
+  renderInvoicePrefixInline(settings);
 
   document.getElementById('clientSelect')?.addEventListener('change', (e) => fillClientFields(e.target.value));
   document.getElementById('serviceSelect')?.addEventListener('change', (e) => fillServiceFields(e.target.value));
   document.getElementById('addItem').addEventListener('click', addInvoiceItem);
+  window.addEventListener('resize', () => renderInvoicePrefixInline(settings));
 
   ['discount', 'shipping', 'currency'].forEach((id) => {
     document.getElementById(id).addEventListener('input', renderSummary);
