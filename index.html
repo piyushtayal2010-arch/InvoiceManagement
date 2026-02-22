@@ -34,15 +34,38 @@
         <p>Create multi-line invoices with your own fields, taxes, totals and payment details.</p>
       </div>
 
+      <div class="invoice-action-bar card">
+        <div class="card-content action-row">
+          <div class="action-left">
+            <span id="dirtyState" class="dirty-state clean">All changes saved</span>
+          </div>
+          <div class="action-right">
+            <button id="saveDraftBtn" class="btn secondary" type="button"><i class="material-icons left">save</i>Save Draft</button>
+            <button class="btn secondary" type="button" onclick="previewPDF()"><i class="material-icons left">visibility</i>Preview PDF</button>
+            <button class="btn" type="button" onclick="generatePDF()"><i class="material-icons left">download</i>Download PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="validationBanner" class="validation-banner hide"></div>
+
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Recent Drafts</span>
+          <p class="section-help">Quickly continue previous invoices.</p>
+          <ul id="draftList" class="collection draft-list"></ul>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-content">
           <span class="card-title">Invoice Basics</span>
           <p class="section-help">All required fields must be filled before downloading.</p>
           <div class="row">
             <div class="input-field col s12 m3 invoice-no-group">
-              <span id="invoicePrefixInline" class="prefix invoice-prefix-inline"></span>
+              <span id="invoicePrefixInline" class="invoice-prefix-inline"></span>
               <input id="invoiceNo" type="text">
-              <label for="invoiceNo">Invoice No *</label>
+              <label for="invoiceNo" class="active">Invoice No *</label>
             </div>
             <div class="input-field col s12 m3">
               <input id="invoiceDate" type="date">
@@ -98,6 +121,7 @@
       <div class="card">
         <div class="card-content">
           <span class="card-title">Invoice Items</span>
+          <p class="section-help">Add services below, then review line items in the table.</p>
           <div class="row">
             <div class="input-field col s12 m3">
               <select id="serviceSelect">
@@ -109,21 +133,28 @@
               <input id="serviceName" type="text">
               <label for="serviceName">Service Name *</label>
             </div>
-            <div class="input-field col s12 m2">
+            <div class="input-field col s12 m3">
+              <textarea id="serviceDesc" class="materialize-textarea"></textarea>
+              <label for="serviceDesc">Description</label>
+            </div>
+            <div class="input-field col s12 m3">
               <input id="hsn" type="text">
               <label for="hsn">HSN/SKU</label>
             </div>
+          </div>
+
+          <div class="row">
             <div class="input-field col s12 m2">
-              <input id="period" type="text">
-              <label for="period">Service Period</label>
+              <input id="periodFrom" type="date">
+              <label for="periodFrom" class="active">Service Period (From)</label>
+            </div>
+            <div class="input-field col s12 m2">
+              <input id="periodTo" type="date">
+              <label for="periodTo" class="active">Service Period (To)</label>
             </div>
             <div class="input-field col s12 m2">
               <input id="qty" type="number" min="0" step="1">
               <label for="qty">Qty *</label>
-            </div>
-            <div class="input-field col s12 m3">
-              <textarea id="serviceDesc" class="materialize-textarea"></textarea>
-              <label for="serviceDesc">Description</label>
             </div>
             <div class="input-field col s6 m2">
               <input id="rate" type="number" min="0" step="0.01">
@@ -133,13 +164,13 @@
               <input id="itemTax" type="number" min="0" step="0.01" value="0">
               <label for="itemTax" class="active">IGST %</label>
             </div>
-            <div class="input-field col s12 m2">
+            <div class="input-field col s12 m2 add-item-wrap">
               <button id="addItem" class="btn" type="button"><i class="material-icons left">add</i>Add Item</button>
             </div>
           </div>
 
-          <div class="invoice-items-wrap">
-            <table id="itemTable" class="striped responsive-table">
+          <div class="invoice-items-wrap hero-items">
+            <table id="itemTable" class="striped">
               <thead>
                 <tr>
                   <th>#</th>
@@ -160,35 +191,36 @@
       <div class="card">
         <div class="card-content">
           <span class="card-title">Totals & Notes</span>
-          <div class="row">
-            <div class="input-field col s12 m3">
-              <input id="discount" type="number" min="0" step="0.01" value="0">
-              <label for="discount" class="active">Discount (Flat)</label>
+          <div class="row totals-layout">
+            <div class="col s12 m7">
+              <div class="row">
+                <div class="input-field col s12 m6">
+                  <input id="discount" type="number" min="0" step="0.01" value="0">
+                  <label for="discount" class="active">Discount (Flat)</label>
+                </div>
+                <div class="input-field col s12 m6">
+                  <input id="shipping" type="number" min="0" step="0.01" value="0">
+                  <label for="shipping" class="active">Shipping / Additional</label>
+                </div>
+              </div>
+              <div class="input-field">
+                <textarea id="invoiceNotes" class="materialize-textarea" style="height: 150px;"></textarea>
+                <label for="invoiceNotes">Invoice Notes</label>
+              </div>
             </div>
-            <div class="input-field col s12 m3">
-              <input id="shipping" type="number" min="0" step="0.01" value="0">
-              <label for="shipping" class="active">Shipping / Additional</label>
-            </div>
-            <div class="col s12 m6">
-              <ul class="collection summary-list">
-                <li class="collection-item">Subtotal <span id="summarySubtotal" class="secondary-content">0.00</span></li>
-                <li class="collection-item">IGST <span id="summaryTax" class="secondary-content">0.00</span></li>
-                <li class="collection-item">Discount (Flat) <span id="summaryDiscount" class="secondary-content">0.00</span></li>
-                <li class="collection-item">Shipping / Additional <span id="summaryShipping" class="secondary-content">0.00</span></li>
-                <li class="collection-item">Grand Total <span id="summaryTotal" class="secondary-content"><strong>0.00</strong></span></li>
-              </ul>
-            </div>
-            <div class="input-field col s12">
-              <textarea id="invoiceNotes" class="materialize-textarea"></textarea>
-              <label for="invoiceNotes">Invoice Notes</label>
+            <div class="col s12 m5">
+              <div class="totals-summary-panel">
+                <ul class="collection summary-list">
+                  <li class="collection-item">Subtotal <span id="summarySubtotal" class="secondary-content">0.00</span></li>
+                  <li class="collection-item">IGST <span id="summaryTax" class="secondary-content">0.00</span></li>
+                  <li class="collection-item">Discount (Flat) <span id="summaryDiscount" class="secondary-content">0.00</span></li>
+                  <li class="collection-item">Shipping / Additional <span id="summaryShipping" class="secondary-content">0.00</span></li>
+                  <li class="collection-item">Grand Total <span id="summaryTotal" class="secondary-content"><strong>0.00</strong></span></li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="right-align" style="margin-top:1rem; display:flex; gap:0.75rem; justify-content:flex-end;">
-        <button class="btn-large secondary" onclick="previewPDF()"><i class="material-icons left">visibility</i>Preview PDF</button>
-        <button class="btn-large" onclick="generatePDF()"><i class="material-icons left">download</i>Download Invoice PDF</button>
       </div>
     </main>
   </div>

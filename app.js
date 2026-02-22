@@ -36,7 +36,7 @@ function populateClientDropdown() {
   loadClientsForDropdown().forEach((c) => {
     const opt = document.createElement('option');
     opt.value = c.email;
-    opt.text = `${c.name} (${c.email})`;
+    opt.text = `${c.name}`;
     select.appendChild(opt);
   });
   M.FormSelect.init(select);
@@ -76,6 +76,8 @@ function fillServiceFields(name) {
 }
 
 const invoiceItems = [];
+const DRAFTS_KEY = 'invoiceDrafts';
+let isDirty = false;
 
 function getCurrency() {
   return document.getElementById('currency')?.value || 'CAD';
@@ -97,6 +99,30 @@ function buildDisplayInvoiceNo(prefix, invoiceNo) {
   return `${prefix ? `${prefix}` : ''}${invoiceNo || 'Draft'}`;
 }
 
+function formatPeriodDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+function normalizeServicePeriod(rawPeriod) {
+  const raw = String(rawPeriod || '').trim();
+  if (!raw) return '';
+  const matches = raw.match(/\d{4}-\d{2}-\d{2}/g) || [];
+  if (matches.length >= 2) {
+    return `[${formatPeriodDate(matches[0])} - ${formatPeriodDate(matches[1])}]`;
+  }
+  if (matches.length === 1) {
+    return formatPeriodDate(matches[0]);
+  }
+  return raw;
+}
+
 function renderInvoicePrefixInline(settings = getSettings()) {
   const prefixEl = document.getElementById('invoicePrefixInline');
   const groupEl = document.querySelector('.invoice-no-group');
@@ -115,25 +141,194 @@ function renderInvoicePrefixInline(settings = getSettings()) {
   groupEl.style.setProperty('--invoice-prefix-offset', `${prefixWidth + 12}px`);
 }
 
+function setDirtyState(dirty) {
+  isDirty = dirty;
+  const dirtyState = document.getElementById('dirtyState');
+  if (!dirtyState) return;
+  dirtyState.className = `dirty-state ${dirty ? 'dirty' : 'clean'}`;
+  dirtyState.textContent = dirty ? 'Unsaved changes' : 'All changes saved';
+}
+
+function showValidationBanner(messages) {
+  const banner = document.getElementById('validationBanner');
+  if (!banner) return;
+  if (!messages?.length) {
+    banner.classList.add('hide');
+    banner.textContent = '';
+    return;
+  }
+  banner.textContent = messages.join(' | ');
+  banner.classList.remove('hide');
+}
+
+function clearFieldErrors() {
+  document.querySelectorAll('.field-error').forEach((el) => el.remove());
+  document.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
+}
+
+function setFieldError(id, message) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.classList.add('invalid');
+  const container = input.closest('.input-field');
+  if (!container) return;
+  const existing = container.querySelector('.field-error');
+  if (existing) existing.remove();
+  const msg = document.createElement('div');
+  msg.className = 'field-error red-text';
+  msg.style.fontSize = '0.78rem';
+  msg.textContent = message;
+  container.appendChild(msg);
+}
+
+function loadDrafts() {
+  const raw = localStorage.getItem(DRAFTS_KEY);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function saveDrafts(drafts) {
+  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+function collectInvoiceState() {
+  return {
+    id: readInput('invoiceNo') || `DRAFT-${Date.now()}`,
+    updatedAt: new Date().toISOString(),
+    invoiceNo: readInput('invoiceNo'),
+    invoiceDate: readInput('invoiceDate'),
+    paymentTerms: readInput('paymentTerms'),
+    currency: document.getElementById('currency')?.value || 'CAD',
+    clientName: readInput('clientName'),
+    clientEmail: readInput('clientEmail'),
+    clientAddress: readInput('clientAddress'),
+    clientPhone: readInput('clientPhone'),
+    discount: readInput('discount'),
+    shipping: readInput('shipping'),
+    invoiceNotes: readInput('invoiceNotes'),
+    items: [...invoiceItems]
+  };
+}
+
+function applyInvoiceState(draft) {
+  if (!draft) return;
+  const simpleFields = [
+    'invoiceNo',
+    'invoiceDate',
+    'paymentTerms',
+    'clientName',
+    'clientEmail',
+    'clientAddress',
+    'clientPhone',
+    'discount',
+    'shipping',
+    'invoiceNotes'
+  ];
+  simpleFields.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = draft[id] ?? '';
+  });
+  if (draft.currency && document.getElementById('currency')) {
+    document.getElementById('currency').value = draft.currency;
+  }
+  invoiceItems.splice(0, invoiceItems.length, ...(draft.items || []));
+  M.FormSelect.init(document.querySelectorAll('select'));
+  M.updateTextFields();
+  renderItemTable();
+  setDirtyState(false);
+  showValidationBanner([]);
+}
+
+function renderDraftList() {
+  const list = document.getElementById('draftList');
+  if (!list) return;
+  list.innerHTML = '';
+  const drafts = loadDrafts().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  if (!drafts.length) {
+    list.innerHTML = '<li class="collection-item grey-text">No drafts yet. Save a draft to continue later.</li>';
+    return;
+  }
+
+  drafts.slice(0, 8).forEach((draft) => {
+    const li = document.createElement('li');
+    li.className = 'collection-item';
+    const left = document.createElement('div');
+    left.innerHTML = `<strong>${draft.invoiceNo || draft.id}</strong><div class="draft-item-meta">Updated ${new Date(draft.updatedAt).toLocaleString()}</div>`;
+    const right = document.createElement('div');
+    right.style.display = 'flex';
+    right.style.gap = '0.35rem';
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'btn-small';
+    loadBtn.type = 'button';
+    loadBtn.textContent = 'Load';
+    loadBtn.addEventListener('click', () => applyInvoiceState(draft));
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-small secondary';
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => {
+      const next = loadDrafts().filter((d) => d.id !== draft.id);
+      saveDrafts(next);
+      renderDraftList();
+    });
+    right.appendChild(loadBtn);
+    right.appendChild(delBtn);
+    li.appendChild(left);
+    li.appendChild(right);
+    list.appendChild(li);
+  });
+}
+
+function saveCurrentDraft() {
+  const draft = collectInvoiceState();
+  const drafts = loadDrafts();
+  const idx = drafts.findIndex((d) => d.id === draft.id);
+  if (idx >= 0) drafts[idx] = draft;
+  else drafts.push(draft);
+  saveDrafts(drafts);
+  renderDraftList();
+  setDirtyState(false);
+  showValidationBanner([]);
+  M.toast({ html: 'Draft saved' });
+}
+
+function initMobileAccordions() {
+  // Disabled: dynamic DOM wrapping/collapse created unstable mobile behavior.
+}
+
 function collectCurrentItemFromForm() {
+  clearFieldErrors();
+  showValidationBanner([]);
   const serviceName = readInput('serviceName');
   const hsn = readInput('hsn');
   const serviceDesc = readInput('serviceDesc');
-  const period = readInput('period');
+  const periodFrom = readInput('periodFrom');
+  const periodTo = readInput('periodTo');
+  const fromLabel = formatPeriodDate(periodFrom);
+  const toLabel = formatPeriodDate(periodTo);
+  const period = fromLabel && toLabel ? `[${fromLabel} - ${toLabel}]` : (fromLabel || toLabel || '');
   const qty = Number(document.getElementById('qty').value) || 0;
   const rate = Number(document.getElementById('rate').value) || 0;
   const taxPct = Number(document.getElementById('itemTax').value) || 0;
 
   if (!serviceName) {
-    M.toast({ html: 'Service name is required' });
+    setFieldError('serviceName', 'Service name is required');
+    showValidationBanner(['Service name is required']);
     return null;
   }
   if (qty <= 0) {
-    M.toast({ html: 'Quantity must be greater than 0' });
+    setFieldError('qty', 'Quantity must be greater than 0');
+    showValidationBanner(['Quantity must be greater than 0']);
     return null;
   }
   if (rate < 0 || taxPct < 0) {
-    M.toast({ html: 'Rate and tax cannot be negative' });
+    setFieldError('rate', 'Rate cannot be negative');
+    setFieldError('itemTax', 'IGST cannot be negative');
+    showValidationBanner(['Rate and IGST cannot be negative']);
     return null;
   }
 
@@ -141,10 +336,15 @@ function collectCurrentItemFromForm() {
 }
 
 function clearItemForm() {
-  ['serviceName', 'hsn', 'serviceDesc', 'period', 'qty', 'rate'].forEach((id) => {
+  ['serviceName', 'hsn', 'serviceDesc', 'periodFrom', 'periodTo', 'qty', 'rate'].forEach((id) => {
     document.getElementById(id).value = '';
   });
   document.getElementById('itemTax').value = document.getElementById('itemTax').value || '0';
+  const serviceSelect = document.getElementById('serviceSelect');
+  if (serviceSelect) {
+    serviceSelect.value = '';
+    M.FormSelect.init(serviceSelect);
+  }
   M.updateTextFields();
 }
 
@@ -154,11 +354,13 @@ function addInvoiceItem() {
   invoiceItems.push(item);
   clearItemForm();
   renderItemTable();
+  setDirtyState(true);
 }
 
 function removeInvoiceItem(index) {
   invoiceItems.splice(index, 1);
   renderItemTable();
+  setDirtyState(true);
 }
 
 function computeTotals() {
@@ -189,16 +391,17 @@ function renderItemTable() {
   tbody.innerHTML = '';
 
   if (!invoiceItems.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="center-align grey-text">No line items added yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="center-align grey-text">No line items yet. Add an item above to begin your invoice.</td></tr>';
     renderSummary();
     return;
   }
 
   invoiceItems.forEach((item, index) => {
+    const displayPeriod = normalizeServicePeriod(item.period);
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${index + 1}</td>
-      <td><strong>${item.serviceName}</strong>${item.hsn ? `<br>HSN: ${item.hsn}` : ''}${item.serviceDesc ? `<br>${item.serviceDesc}` : ''}${item.period ? `<br>${item.period}` : ''}</td>
+      <td><strong>${item.serviceName}</strong>${item.hsn ? `<br>HSN: ${item.hsn}` : ''}${item.serviceDesc ? `<br>${item.serviceDesc}` : ''}${displayPeriod ? `<br>${displayPeriod}` : ''}</td>
       <td>${item.qty}</td>
       <td>${formatMoney(item.rate)}</td>
       <td>${item.taxPct.toFixed(2)}%</td>
@@ -213,6 +416,8 @@ function renderItemTable() {
 }
 
 function validateInvoiceBeforeDownload() {
+  clearFieldErrors();
+  const errors = [];
   const required = [
     ['invoiceNo', 'Invoice number is required'],
     ['invoiceDate', 'Invoice date is required'],
@@ -223,17 +428,21 @@ function validateInvoiceBeforeDownload() {
 
   for (const [id, message] of required) {
     if (!readInput(id)) {
-      M.toast({ html: message });
-      document.getElementById(id).focus();
-      return false;
+      setFieldError(id, message);
+      errors.push(message);
     }
   }
 
   if (!invoiceItems.length) {
-    M.toast({ html: 'Add at least one line item' });
-    return false;
+    errors.push('Add at least one line item');
   }
 
+  showValidationBanner(errors);
+  if (errors.length) {
+    const first = required.find(([id]) => !readInput(id));
+    if (first) document.getElementById(first[0]).focus();
+    return false;
+  }
   return true;
 }
 
@@ -303,7 +512,12 @@ function generatePDF(previewOnly = false) {
     const rightX = 190;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Invoice # : ${displayInvoiceNo}`, rightX, invY - 2, null, null, 'right');
+    const invoiceLabel = 'Invoice # : ';
+    doc.setFont('helvetica', 'bold');
+    const invoiceValueWidth = doc.getTextWidth(displayInvoiceNo);
+    doc.text(displayInvoiceNo, rightX, invY - 2, null, null, 'right');
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoiceLabel, rightX - invoiceValueWidth, invY - 2, null, null, 'right');
     doc.text(`Invoice Date : ${invoiceDate}`, rightX, invY + 2, null, null, 'right');
     doc.text(`Currency : ${getCurrency()}`, rightX, invY + 6, null, null, 'right');
     if (dueDate) {
@@ -313,9 +527,9 @@ function generatePDF(previewOnly = false) {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Bill To', 20, invY);
-    doc.setFont('helvetica', 'normal');
     let billY = invY + 5;
     doc.text(client, 20, billY);
+    doc.setFont('helvetica', 'normal');
     billY += 5;
     clientAddress
       .split('\n')
@@ -331,9 +545,10 @@ function generatePDF(previewOnly = false) {
 
     const tableBody = invoiceItems.map((item, index) => {
       const taxAmount = item.amount * (item.taxPct / 100);
+      const displayPeriod = normalizeServicePeriod(item.period);
       return [
         `${index + 1}`,
-        `${item.serviceName}\nHSN: ${item.hsn || '-'}${item.serviceDesc ? `\n${item.serviceDesc}` : ''}${item.period ? `\n${item.period}` : ''}`,
+        `${item.serviceName}\nHSN: ${item.hsn || '-'}${item.serviceDesc ? `\n${item.serviceDesc}` : ''}${displayPeriod ? `\n${displayPeriod}` : ''}`,
         item.qty.toString(),
         item.rate.toFixed(2),
         { taxAmount: taxAmount.toFixed(2), taxPct: item.taxPct.toFixed(2) },
@@ -357,21 +572,46 @@ function generatePDF(previewOnly = false) {
       headStyles: { fillColor: [0, 70, 136], textColor: 255 },
       columnStyles: {
         0: { halign: 'left', cellWidth: 15 },
-        1: { cellWidth: 69 },
+        1: { cellWidth: 79 },
         2: { halign: 'right' },
         3: { halign: 'right' },
-        4: { halign: 'center', cellWidth: 23 },
-        5: { halign: 'right', cellWidth: 26 }
+        4: { halign: 'center', cellWidth: 20 },
+        5: { halign: 'right', cellWidth: 24 }
       },
       didParseCell: (data) => {
         if (data.section === 'head' && [2, 3, 4, 5].includes(data.column.index)) {
           data.cell.styles.halign = 'right';
         }
+        if (data.section === 'body' && data.column.index === 1 && typeof data.cell.raw === 'string') {
+          const lines = String(data.cell.raw).split('\n');
+          const firstLine = lines.shift() || '';
+          data.cell.raw = { firstLine, restLines: lines };
+          data.cell.text = ['', ...lines]; // reserve first row for custom bold line
+          data.cell.styles.fontStyle = 'normal';
+          data.cell.styles.valign = 'top';
+        }
+        if (data.section === 'body' && ![1, 4].includes(data.column.index)) {
+          data.cell.styles.fontStyle = 'bold';
+        }
         if (data.section === 'body' && data.column.index === 4 && data.cell.raw && typeof data.cell.raw === 'object') {
           data.cell.text = [''];
+          data.cell.styles.valign = 'top';
         }
       },
       didDrawCell: (data) => {
+        if (data.section === 'body' && data.column.index === 1 && data.cell.raw && data.cell.raw.firstLine !== undefined) {
+          const padX = 1.5;
+          const textX = data.cell.x + padX;
+          const maxW = Math.max(0, data.cell.width - padX * 2);
+          const firstLine = String(data.cell.raw.firstLine || '');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.text(firstLine, textX, data.cell.y + 4.4, { maxWidth: maxW });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          return;
+        }
+
         if (data.section !== 'body' || data.column.index !== 4 || !data.cell.raw || typeof data.cell.raw !== 'object') return;
 
         const pad = 1.5;
@@ -381,13 +621,13 @@ function generatePDF(previewOnly = false) {
         const amountText = String(data.cell.raw.taxAmount);
         const igstText = `IGST:${data.cell.raw.taxPct}%`;
 
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        doc.text(amountText, rightX, data.cell.y + 5, { align: 'right', maxWidth: maxW });
+        doc.text(amountText, rightX, data.cell.y + 4.4, { align: 'right', maxWidth: maxW });
 
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(6);
-        doc.text(igstText, rightX, data.cell.y + 8, { align: 'right', maxWidth: maxW });
+        doc.text(igstText, rightX, data.cell.y + 7.6, { align: 'right', maxWidth: maxW });
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
@@ -407,7 +647,7 @@ function generatePDF(previewOnly = false) {
 
     doc.text('Base Amount', labelLeftX, finalY);
     doc.text(formatMoney(totals.subtotal), valueRightX, finalY, null, null, 'right');
-    doc.text(`(+) IGST: ${effectiveIgstRate.toFixed(2)}%`, labelLeftX, finalY + 6);
+    doc.text(`(+) IGST`, labelLeftX, finalY + 6);
     doc.text(formatMoney(totals.igstTax), valueRightX, finalY + 6, null, null, 'right');
     doc.setFont('helvetica', 'bold');
     doc.text('Total', labelLeftX, finalY + 12);
@@ -443,24 +683,24 @@ function generatePDF(previewOnly = false) {
     doc.text(composedNotes, 20, finalY + 15, { maxWidth: 110 });
 
     const boxY = grandTextY + 16;
-    doc.rect(20, boxY, 85, 30);
-    doc.rect(110, boxY, 85, 30);
+    doc.rect(20, boxY, 82, 30);
+    doc.rect(108, boxY, 82, 30);
     doc.setFontSize(9);
     doc.text('Payable To', 22, boxY + 5);
     doc.setFont('helvetica', 'bold');
     doc.text(payableTo, 22, boxY + 12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Bank Details', 112, boxY + 5);
-    doc.text(`BANK NAME: ${bankName}`, 112, boxY + 10);
-    doc.text(`ACCOUNT HOLDER NAME: ${bankHolder}`, 112, boxY + 14);
-    doc.text(`ACCOUNT NUMBER: ${bankAcct}`, 112, boxY + 18);
-    doc.text(`SWIFT CODE: ${bankSwift}`, 112, boxY + 22);
-    doc.text(`UPI ID: ${bankUpi}`, 112, boxY + 26);
+    doc.text('Bank Details', 110, boxY + 5);
+    doc.text(`BANK NAME: ${bankName}`, 110, boxY + 10);
+    doc.text(`ACCOUNT HOLDER NAME: ${bankHolder}`, 110, boxY + 14);
+    doc.text(`ACCOUNT NUMBER: ${bankAcct}`, 110, boxY + 18);
+    doc.text(`SWIFT CODE: ${bankSwift}`, 110, boxY + 22);
+    doc.text(`UPI ID: ${bankUpi}`, 110, boxY + 26);
 
     const signBoxY = boxY + 34;
-    doc.text(`For ${name}`, 193, signBoxY + 10, null, null, 'right');
-    doc.text(settings.signatoryName || 'Authorized Signatory', 193, signBoxY + 24, null, null, 'right');
-    doc.text('(Authorised Signatory)', 193, signBoxY + 29, null, null, 'right');
+    doc.text(`For ${name}`, 190, signBoxY + 10, null, null, 'right');
+    doc.text(settings.signatoryName || 'Authorized Signatory', 190, signBoxY + 24, null, null, 'right');
+    doc.text('(Authorised Signatory)', 190, signBoxY + 29, null, null, 'right');
 
     if (previewOnly) {
       const pdfUrl = doc.output('bloburl');
@@ -469,6 +709,7 @@ function generatePDF(previewOnly = false) {
     }
 
     doc.save(`Invoice_${displayInvoiceNo}.pdf`);
+    setDirtyState(false);
   } catch (err) {
     console.error('generatePDF error', err);
     alert(`Failed to generate PDF: ${err.message}`);
@@ -485,11 +726,23 @@ window.addEventListener('DOMContentLoaded', () => {
   if (settings.defaultPaymentTerms !== undefined) document.getElementById('paymentTerms').value = settings.defaultPaymentTerms;
   if (settings.defaultNotes) document.getElementById('invoiceNotes').value = settings.defaultNotes;
   renderInvoicePrefixInline(settings);
+  renderDraftList();
+  setDirtyState(false);
+  initMobileAccordions();
 
   document.getElementById('clientSelect')?.addEventListener('change', (e) => fillClientFields(e.target.value));
   document.getElementById('serviceSelect')?.addEventListener('change', (e) => fillServiceFields(e.target.value));
   document.getElementById('addItem').addEventListener('click', addInvoiceItem);
-  window.addEventListener('resize', () => renderInvoicePrefixInline(settings));
+  document.getElementById('saveDraftBtn')?.addEventListener('click', saveCurrentDraft);
+  window.addEventListener('resize', () => {
+    renderInvoicePrefixInline(settings);
+    initMobileAccordions();
+  });
+
+  document.querySelectorAll('input, textarea, select').forEach((el) => {
+    el.addEventListener('input', () => setDirtyState(true));
+    el.addEventListener('change', () => setDirtyState(true));
+  });
 
   ['discount', 'shipping', 'currency'].forEach((id) => {
     document.getElementById(id).addEventListener('input', renderSummary);

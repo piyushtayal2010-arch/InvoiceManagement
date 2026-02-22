@@ -31,48 +31,72 @@
         <p>Customize every reusable invoice value from one place. No personal data is prefilled anymore.</p>
       </div>
 
-      <div class="card"><div class="card-content">
-        <span class="card-title">Business Details</span>
-        <div class="row">
-          <div class="input-field col s12 m6"><input id="companyName" type="text"><label for="companyName">Company Name</label></div>
-          <div class="input-field col s12"><textarea id="companyAddress" class="materialize-textarea"></textarea><label for="companyAddress">Address</label></div>
-          <div class="input-field col s12 m6"><input id="companyEmail" type="email"><label for="companyEmail">Email</label></div>
-          <div class="input-field col s12 m6"><input id="companyPhone" type="text"><label for="companyPhone">Phone</label></div>
-          <div class="input-field col s12 m6"><input id="companyGstin" type="text"><label for="companyGstin">Tax ID / GSTIN</label></div>
-          <div class="input-field col s12 m6"><input id="signatoryName" type="text"><label for="signatoryName">Signatory Name</label></div>
+      <div class="card settings-tabs-card">
+        <div class="card-content">
+          <ul id="settingsTabs" class="tabs">
+            <li class="tab col s4"><a class="active" href="#tabBusiness">Business</a></li>
+            <li class="tab col s4"><a href="#tabDefaults">Invoice Defaults</a></li>
+            <li class="tab col s4"><a href="#tabPayment">Payment</a></li>
+          </ul>
         </div>
-      </div></div>
+      </div>
 
-      <div class="card"><div class="card-content">
-        <span class="card-title">Invoice Defaults</span>
-        <div class="row">
-          <div class="input-field col s12 m3">
-            <select id="defaultCurrency">
-              <option value="CAD">CAD</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="INR">INR</option>
-            </select>
-            <label>Default Currency</label>
+      <div id="tabBusiness">
+        <div class="card"><div class="card-content">
+          <span class="card-title">Business Details</span>
+          <div class="row">
+            <div class="input-field col s12 m6"><input id="companyName" type="text"><label for="companyName">Company Name</label></div>
+            <div class="input-field col s12"><textarea id="companyAddress" class="materialize-textarea"></textarea><label for="companyAddress">Address</label></div>
+            <div class="input-field col s12 m6"><input id="companyEmail" type="email"><label for="companyEmail">Email</label></div>
+            <div class="input-field col s12 m6"><input id="companyPhone" type="text"><label for="companyPhone">Phone</label></div>
+            <div class="input-field col s12 m6"><input id="companyGstin" type="text"><label for="companyGstin">Tax ID / GSTIN</label></div>
+            <div class="input-field col s12 m6"><input id="signatoryName" type="text"><label for="signatoryName">Signatory Name</label></div>
           </div>
-          <div class="input-field col s12 m3"><input id="defaultTaxPct" type="number" min="0" step="0.01"><label for="defaultTaxPct">Default Tax %</label></div>
-          <div class="input-field col s12 m3"><input id="defaultPaymentTerms" type="number" min="0" step="1"><label for="defaultPaymentTerms">Default Terms (days)</label></div>
-          <div class="input-field col s12 m3"><input id="invoicePrefix" type="text"><label for="invoicePrefix">Invoice Prefix</label></div>
-          <div class="input-field col s12"><textarea id="defaultNotes" class="materialize-textarea"></textarea><label for="defaultNotes">Default Notes</label></div>
-        </div>
-      </div></div>
+        </div></div>
 
-      <div class="card"><div class="card-content">
-        <span class="card-title">Bank / Payment Details</span>
-        <div class="row">
-          <div class="input-field col s12 m6"><input id="bankName" type="text"><label for="bankName">Bank Name</label></div>
-          <div class="input-field col s12 m6"><input id="bankAccount" type="text"><label for="bankAccount">Account Number</label></div>
-          <div class="input-field col s12 m6"><input id="bankHolder" type="text"><label for="bankHolder">Account Holder</label></div>
-          <div class="input-field col s12 m6"><input id="payableTo" type="text"><label for="payableTo">Payable To Name</label></div>
-          <div class="input-field col s12 m6"><input id="bankSwift" type="text"><label for="bankSwift">SWIFT / IFSC</label></div>
-          <div class="input-field col s12"><input id="bankUpi" type="text"><label for="bankUpi">UPI / Payment Handle</label></div>
+        <div class="card">
+          <div class="card-content">
+            <span class="card-title">Template Preview</span>
+            <p class="section-help">Live sample of invoice header/footer details.</p>
+            <div class="template-preview" id="settingsPreview"></div>
+          </div>
         </div>
-      </div></div>
+      </div>
+
+      <div id="tabDefaults">
+        <div class="card"><div class="card-content">
+          <span class="card-title">Invoice Defaults</span>
+          <div class="row">
+            <div class="input-field col s12 m3">
+              <select id="defaultCurrency">
+                <option value="CAD">CAD</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="INR">INR</option>
+              </select>
+              <label>Default Currency</label>
+            </div>
+            <div class="input-field col s12 m3"><input id="defaultTaxPct" type="number" min="0" step="0.01"><label for="defaultTaxPct">Default Tax %</label></div>
+            <div class="input-field col s12 m3"><input id="defaultPaymentTerms" type="number" min="0" step="1"><label for="defaultPaymentTerms">Default Terms (days)</label></div>
+            <div class="input-field col s12 m3"><input id="invoicePrefix" type="text"><label for="invoicePrefix">Invoice Prefix</label></div>
+            <div class="input-field col s12"><textarea id="defaultNotes" class="materialize-textarea"></textarea><label for="defaultNotes">Default Notes</label></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div id="tabPayment">
+        <div class="card"><div class="card-content">
+          <span class="card-title">Bank / Payment Details</span>
+          <div class="row">
+            <div class="input-field col s12 m6"><input id="bankName" type="text"><label for="bankName">Bank Name</label></div>
+            <div class="input-field col s12 m6"><input id="bankAccount" type="text"><label for="bankAccount">Account Number</label></div>
+            <div class="input-field col s12 m6"><input id="bankHolder" type="text"><label for="bankHolder">Account Holder</label></div>
+            <div class="input-field col s12 m6"><input id="payableTo" type="text"><label for="payableTo">Payable To Name</label></div>
+            <div class="input-field col s12 m6"><input id="bankSwift" type="text"><label for="bankSwift">SWIFT / IFSC</label></div>
+            <div class="input-field col s12"><input id="bankUpi" type="text"><label for="bankUpi">UPI / Payment Handle</label></div>
+          </div>
+        </div></div>
+      </div>
 
       <div class="right-align">
         <a href="index.html" class="btn secondary">Back</a>
