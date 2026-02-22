@@ -15,6 +15,18 @@ function saveSettings(settings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
+function renderSettingsPreview(settings = loadSettings()) {
+  const preview = document.getElementById('settingsPreview');
+  if (!preview) return;
+  preview.innerHTML = `
+    <div><strong>${settings.companyName || 'Company Name'}</strong></div>
+    <div>${(settings.companyAddress || 'Company address').replace(/\n/g, '<br>')}</div>
+    <div>${settings.companyEmail || 'company@email.com'}${settings.companyPhone ? ` | ${settings.companyPhone}` : ''}</div>
+    <div style="margin-top:.5rem;"><strong>Prefix:</strong> ${settings.invoicePrefix || '(none)'} | <strong>Currency:</strong> ${settings.defaultCurrency || 'CAD'} | <strong>Terms:</strong> ${settings.defaultPaymentTerms || 0} days</div>
+    <div style="margin-top:.5rem;"><strong>Payable To:</strong> ${settings.payableTo || settings.bankHolder || '-'} | <strong>Bank:</strong> ${settings.bankName || '-'}</div>
+  `;
+}
+
 function populateForm() {
   const s = loadSettings();
   const fields = [
@@ -30,7 +42,9 @@ function populateForm() {
 
   document.getElementById('defaultCurrency').value = s.defaultCurrency || 'CAD';
   M.FormSelect.init(document.querySelectorAll('select'));
+  M.Tabs.init(document.querySelectorAll('.tabs'));
   M.updateTextFields();
+  renderSettingsPreview(s);
 }
 
 function gatherForm() {
@@ -53,7 +67,14 @@ window.addEventListener('DOMContentLoaded', () => {
   populateForm();
   document.getElementById('saveSettings').addEventListener('click', (e) => {
     e.preventDefault();
-    saveSettings(gatherForm());
+    const current = gatherForm();
+    saveSettings(current);
+    renderSettingsPreview(current);
     M.toast({ html: 'Settings saved' });
+  });
+
+  document.querySelectorAll('#tabBusiness input, #tabBusiness textarea, #tabDefaults input, #tabDefaults textarea, #tabDefaults select, #tabPayment input').forEach((el) => {
+    el.addEventListener('input', () => renderSettingsPreview(gatherForm()));
+    el.addEventListener('change', () => renderSettingsPreview(gatherForm()));
   });
 });
