@@ -1,21 +1,4 @@
-const STORAGE_KEY = 'invoiceSettings';
-
-function loadSettings() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error('Settings parse error', e);
-    return {};
-  }
-}
-
-function saveSettings(settings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-}
-
-function renderSettingsPreview(settings = loadSettings()) {
+function renderSettingsPreview(settings = {}) {
   const preview = document.getElementById('settingsPreview');
   if (!preview) return;
   preview.innerHTML = `
@@ -24,14 +7,14 @@ function renderSettingsPreview(settings = loadSettings()) {
     <div>${settings.companyEmail || 'company@email.com'}${settings.companyPhone ? ` | ${settings.companyPhone}` : ''}</div>
     <div style="margin-top:.5rem;"><strong>Prefix:</strong> ${settings.invoicePrefix || '(none)'} | <strong>Currency:</strong> ${settings.defaultCurrency || 'CAD'} | <strong>Terms:</strong> ${settings.defaultPaymentTerms || 0} days</div>
     <div style="margin-top:.5rem;"><strong>Payable To:</strong> ${settings.payableTo || settings.bankHolder || '-'} | <strong>Bank:</strong> ${settings.bankName || '-'}</div>
+    <div><strong>Bank Address:</strong> ${settings.bankAddress || '-'}</div>
   `;
 }
 
-function populateForm() {
-  const s = loadSettings();
+function populateForm(s = {}) {
   const fields = [
     'companyName', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin', 'signatoryName',
-    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes',
+    'bankName', 'bankAddress', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes',
     'defaultTaxPct', 'defaultPaymentTerms', 'invoicePrefix'
   ];
 
@@ -51,7 +34,7 @@ function gatherForm() {
   const out = {};
   [
     'companyName', 'companyAddress', 'companyEmail', 'companyPhone', 'companyGstin', 'signatoryName',
-    'bankName', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes',
+    'bankName', 'bankAddress', 'bankAccount', 'bankHolder', 'payableTo', 'bankSwift', 'bankUpi', 'defaultNotes',
     'invoicePrefix'
   ].forEach((id) => {
     out[id] = document.getElementById(id).value.trim();
@@ -63,14 +46,30 @@ function gatherForm() {
   return out;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  populateForm();
-  document.getElementById('saveSettings').addEventListener('click', (e) => {
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!document.getElementById('saveSettings')) return;
+
+  const ok = await window.Auth.requireAuth();
+  if (!ok) return;
+
+  try {
+    const settings = await window.Api.getSettings();
+    populateForm(settings || {});
+  } catch (err) {
+    populateForm({});
+    M.toast({ html: err.message || 'Failed to load settings' });
+  }
+
+  document.getElementById('saveSettings').addEventListener('click', async (e) => {
     e.preventDefault();
     const current = gatherForm();
-    saveSettings(current);
-    renderSettingsPreview(current);
-    M.toast({ html: 'Settings saved' });
+    try {
+      await window.Api.saveSettings(current);
+      renderSettingsPreview(current);
+      M.toast({ html: 'Settings saved' });
+    } catch (err) {
+      M.toast({ html: err.message || 'Save failed' });
+    }
   });
 
   document.querySelectorAll('#tabBusiness input, #tabBusiness textarea, #tabDefaults input, #tabDefaults textarea, #tabDefaults select, #tabPayment input').forEach((el) => {

@@ -1,0 +1,6 @@
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+invoicemanagement-*.json
+*service-account*.json

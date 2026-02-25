@@ -53,6 +53,44 @@ body {
   margin: 0;
 }
 
+.app-nav .container {
+  width: 100%;
+  max-width: none;
+}
+
+.app-nav .brand-logo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 130px);
+}
+
+.profile-menu-wrap {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.profile-trigger {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-trigger i {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.profile-dropdown {
+  min-width: 190px;
+}
+
+.profile-dropdown li > a {
+  color: #1f2937;
+}
+
 .menu-toggle {
   display: none !important;
   background: none;
@@ -260,6 +298,31 @@ body {
   align-items: flex-end;
 }
 
+.login-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 20%, #dbe8ff 0%, #f3f5fb 45%, #eef2ff 100%);
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 460px;
+}
+
+.login-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .add-item-wrap .btn {
   width: 100%;
 }
@@ -410,6 +473,10 @@ body {
     font-size: 1.1rem !important;
   }
 
+  .app-nav .brand-logo {
+    max-width: calc(100% - 165px);
+  }
+
   .app-shell {
     flex-direction: column;
     margin-top: 64px;
@@ -504,6 +571,10 @@ body {
 
   .brand-logo {
     font-size: 1rem !important;
+  }
+
+  .app-nav .brand-logo {
+    max-width: calc(100% - 150px);
   }
 
   .app-shell {

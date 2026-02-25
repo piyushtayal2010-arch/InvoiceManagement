@@ -20,6 +20,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <a href="index.html"><i class="material-icons">receipt_long</i><span>Invoice Builder</span></a>
+      <a href="invoices.html"><i class="material-icons">history</i><span>Invoices</span></a>
       <a href="clients.html"><i class="material-icons">groups</i><span>Clients</span></a>
       <a href="services.html"><i class="material-icons">inventory_2</i><span>Services</span></a>
       <a href="settings.html" class="active-link"><i class="material-icons">tune</i><span>Settings</span></a>
@@ -89,6 +90,7 @@
           <span class="card-title">Bank / Payment Details</span>
           <div class="row">
             <div class="input-field col s12 m6"><input id="bankName" type="text"><label for="bankName">Bank Name</label></div>
+            <div class="input-field col s12 m6"><input id="bankAddress" type="text"><label for="bankAddress">Bank Address</label></div>
             <div class="input-field col s12 m6"><input id="bankAccount" type="text"><label for="bankAccount">Account Number</label></div>
             <div class="input-field col s12 m6"><input id="bankHolder" type="text"><label for="bankHolder">Account Holder</label></div>
             <div class="input-field col s12 m6"><input id="payableTo" type="text"><label for="payableTo">Payable To Name</label></div>
@@ -106,6 +108,8 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="auth.js"></script>
+  <script src="api.js"></script>
   <script src="settings.js"></script>
   <script src="nav.js"></script>
 </body>

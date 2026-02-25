@@ -1,32 +1,42 @@
+let clientsCache = [];
+let servicesCache = [];
+let settingsCache = {};
+let draftsCache = [];
+
 function loadClientsForDropdown() {
-  const raw = localStorage.getItem('invoiceClients');
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
-  }
+  return clientsCache;
 }
 
 function loadServicesForDropdown() {
-  const raw = localStorage.getItem('invoiceServices');
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
-  }
+  return servicesCache;
 }
 
 function getSettings() {
-  const raw = localStorage.getItem('invoiceSettings');
-  if (!raw) return {};
+  return settingsCache || {};
+}
+
+async function bootstrapRemoteData() {
   try {
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error('invalid settings', e);
-    return {};
+    const data = await window.Api.bootstrap();
+    clientsCache = Array.isArray(data?.clients) ? data.clients : [];
+    servicesCache = Array.isArray(data?.services) ? data.services : [];
+    settingsCache = data?.settings || {};
+    draftsCache = Array.isArray(data?.drafts) ? data.drafts : [];
+    return;
+  } catch (_err) {
+    // Fallback to individual endpoints if backend has not been restarted yet.
   }
+
+  const [clients, services, settings, drafts] = await Promise.all([
+    window.Api.getClients(),
+    window.Api.getServices(),
+    window.Api.getSettings(),
+    window.Api.getDrafts()
+  ]);
+  clientsCache = Array.isArray(clients) ? clients : [];
+  servicesCache = Array.isArray(services) ? services : [];
+  settingsCache = settings || {};
+  draftsCache = Array.isArray(drafts) ? drafts : [];
 }
 
 function populateClientDropdown() {
@@ -76,7 +86,6 @@ function fillServiceFields(name) {
 }
 
 const invoiceItems = [];
-const DRAFTS_KEY = 'invoiceDrafts';
 let isDirty = false;
 
 function getCurrency() {
@@ -182,17 +191,15 @@ function setFieldError(id, message) {
 }
 
 function loadDrafts() {
-  const raw = localStorage.getItem(DRAFTS_KEY);
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+  return draftsCache;
 }
 
 function saveDrafts(drafts) {
-  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  draftsCache = [...drafts];
+  window.Api.replaceDrafts(drafts).catch((err) => {
+    console.error('save drafts failed', err);
+    M.toast({ html: 'Failed to save drafts to server' });
+  });
 }
 
 function collectInvoiceState() {
@@ -214,9 +221,26 @@ function collectInvoiceState() {
   };
 }
 
+function buildInvoicePersistPayload() {
+  const totals = computeTotals();
+  const draftState = collectInvoiceState();
+  return {
+    id: readInput('invoiceRecordId') || undefined,
+    invoiceNo: draftState.invoiceNo,
+    invoiceDate: draftState.invoiceDate,
+    clientName: draftState.clientName,
+    clientEmail: draftState.clientEmail,
+    currency: draftState.currency,
+    grandTotal: totals.grandTotal,
+    status: 'sent',
+    payload: draftState
+  };
+}
+
 function applyInvoiceState(draft) {
   if (!draft) return;
   const simpleFields = [
+    'invoiceRecordId',
     'invoiceNo',
     'invoiceDate',
     'paymentTerms',
@@ -241,6 +265,23 @@ function applyInvoiceState(draft) {
   renderItemTable();
   setDirtyState(false);
   showValidationBanner([]);
+}
+
+async function loadInvoiceFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const invoiceId = params.get('invoiceId');
+  if (!invoiceId) return;
+
+  try {
+    const result = await window.Api.getInvoice(invoiceId);
+    if (result?.invoice?.payload) {
+      const payload = { ...result.invoice.payload, invoiceRecordId: result.invoice.id };
+      applyInvoiceState(payload);
+      M.toast({ html: `Loaded invoice ${result.invoice.invoiceNo || ''}`.trim() });
+    }
+  } catch (err) {
+    M.toast({ html: err.message || 'Failed to load invoice' });
+  }
 }
 
 function renderDraftList() {
@@ -446,7 +487,7 @@ function validateInvoiceBeforeDownload() {
   return true;
 }
 
-function generatePDF(previewOnly = false) {
+async function generatePDF(previewOnly = false) {
   try {
     if (!validateInvoiceBeforeDownload()) return;
 
@@ -477,10 +518,11 @@ function generatePDF(previewOnly = false) {
     const contact = (settings.companyPhone ? `${settings.companyPhone} | ` : '') + (settings.companyEmail || 'Email not configured');
     const gstin = settings.companyGstin ? `GSTIN : ${settings.companyGstin}` : '';
     const bankName = settings.bankName || 'Bank not configured';
+    const bankAddress = String(settings.bankAddress || '').trim();
     const bankAcct = settings.bankAccount || 'Account number not configured';
     const bankHolder = settings.bankHolder || 'Account holder not configured';
     const bankSwift = settings.bankSwift || 'Code not configured';
-    const bankUpi = settings.bankUpi || 'Payment handle not configured';
+    const bankUpi = String(settings.bankUpi || '').trim();
     const payableTo = settings.payableTo || bankHolder;
     const displayInvoiceNo = buildDisplayInvoiceNo(settings.invoicePrefix, invoiceNo);
 
@@ -519,10 +561,14 @@ function generatePDF(previewOnly = false) {
     doc.setFont('helvetica', 'normal');
     doc.text(invoiceLabel, rightX - invoiceValueWidth, invY - 2, null, null, 'right');
     doc.text(`Invoice Date : ${invoiceDate}`, rightX, invY + 2, null, null, 'right');
-    doc.text(`Currency : ${getCurrency()}`, rightX, invY + 6, null, null, 'right');
+    let invoiceMetaY = invY + 6;
     if (dueDate) {
-      doc.text(`Due Date : ${dueDate}`, rightX, invY + 10, null, null, 'right');
+      doc.text(`Due Date : ${dueDate}`, rightX, invoiceMetaY, null, null, 'right');
+      invoiceMetaY += 8; // one blank line before currency
+    } else {
+      invoiceMetaY += 4;
     }
+    doc.text(`Currency : ${getCurrency()}`, rightX, invoiceMetaY, null, null, 'right');
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -683,21 +729,39 @@ function generatePDF(previewOnly = false) {
     doc.text(composedNotes, 20, finalY + 15, { maxWidth: 110 });
 
     const boxY = grandTextY + 16;
-    doc.rect(20, boxY, 82, 30);
-    doc.rect(108, boxY, 82, 30);
+    const bankDetailLines = [
+      `BANK NAME: ${bankName}`,
+      `ACCOUNT NAME: ${bankHolder}`,
+      `ACCOUNT NUMBER: ${bankAcct}`,
+      `SWIFT CODE: ${bankSwift}`,
+      bankUpi ? `UPI ID: ${bankUpi}` : ''
+    ].filter(Boolean);
+    if (bankAddress) bankDetailLines.push(`BANK ADDRESS: ${bankAddress}`);
+
     doc.setFontSize(9);
+    const wrappedBankLines = [];
+    bankDetailLines.forEach((line) => {
+      const chunks = doc.splitTextToSize(line, 76);
+      wrappedBankLines.push(...chunks);
+    });
+    const bankBoxHeight = Math.max(36, 10 + wrappedBankLines.length * 4 + 2);
+
+    doc.rect(20, boxY, 82, bankBoxHeight);
+    doc.rect(108, boxY, 82, bankBoxHeight);
+
     doc.text('Payable To', 22, boxY + 5);
     doc.setFont('helvetica', 'bold');
     doc.text(payableTo, 22, boxY + 12);
     doc.setFont('helvetica', 'normal');
     doc.text('Bank Details', 110, boxY + 5);
-    doc.text(`BANK NAME: ${bankName}`, 110, boxY + 10);
-    doc.text(`ACCOUNT HOLDER NAME: ${bankHolder}`, 110, boxY + 14);
-    doc.text(`ACCOUNT NUMBER: ${bankAcct}`, 110, boxY + 18);
-    doc.text(`SWIFT CODE: ${bankSwift}`, 110, boxY + 22);
-    doc.text(`UPI ID: ${bankUpi}`, 110, boxY + 26);
 
-    const signBoxY = boxY + 34;
+    let bankLineY = boxY + 10;
+    wrappedBankLines.forEach((line) => {
+      doc.text(line, 110, bankLineY);
+      bankLineY += 4;
+    });
+
+    const signBoxY = boxY + bankBoxHeight + 4;
     doc.text(`For ${name}`, 190, signBoxY + 10, null, null, 'right');
     doc.text(settings.signatoryName || 'Authorized Signatory', 190, signBoxY + 24, null, null, 'right');
     doc.text('(Authorised Signatory)', 190, signBoxY + 29, null, null, 'right');
@@ -708,6 +772,17 @@ function generatePDF(previewOnly = false) {
       return;
     }
 
+    try {
+      const saved = await window.Api.saveInvoice(buildInvoicePersistPayload());
+      if (saved?.id) {
+        const hiddenId = document.getElementById('invoiceRecordId');
+        if (hiddenId) hiddenId.value = saved.id;
+      }
+    } catch (saveErr) {
+      console.error('invoice save failed', saveErr);
+      M.toast({ html: 'PDF generated, but failed to save invoice record' });
+    }
+
     doc.save(`Invoice_${displayInvoiceNo}.pdf`);
     setDirtyState(false);
   } catch (err) {
@@ -716,7 +791,17 @@ function generatePDF(previewOnly = false) {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  const ok = await window.Auth.requireAuth();
+  if (!ok) return;
+
+  try {
+    await bootstrapRemoteData();
+  } catch (err) {
+    console.error('bootstrap failed', err);
+    M.toast({ html: 'Failed to load your account data' });
+  }
+
   populateClientDropdown();
   populateServiceDropdown();
 
@@ -735,7 +820,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('addItem').addEventListener('click', addInvoiceItem);
   document.getElementById('saveDraftBtn')?.addEventListener('click', saveCurrentDraft);
   window.addEventListener('resize', () => {
-    renderInvoicePrefixInline(settings);
+    renderInvoicePrefixInline(getSettings());
     initMobileAccordions();
   });
 
@@ -751,10 +836,11 @@ window.addEventListener('DOMContentLoaded', () => {
   M.FormSelect.init(document.querySelectorAll('select'));
   M.updateTextFields();
   renderItemTable();
+  await loadInvoiceFromQuery();
 });
 
-function previewPDF() {
-  generatePDF(true);
+async function previewPDF() {
+  await generatePDF(true);
 }
 
 window.generatePDF = generatePDF;
