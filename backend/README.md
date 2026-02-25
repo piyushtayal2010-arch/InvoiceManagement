@@ -8,6 +8,7 @@
 - Copy `backend/.env.example` to `backend/.env`.
 - Fill:
   - `JWT_SECRET`
+  - `CORS_ORIGINS`
   - `GOOGLE_SHEET_ID`
   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
   - `GOOGLE_PRIVATE_KEY`
@@ -32,3 +33,15 @@ App runs at `http://localhost:3000` and opens `login.html`.
 - You can set `SHEETS_CACHE_TTL_MS` in `.env` (default `10000`).
 - Example: `SHEETS_CACHE_TTL_MS=15000`
 - Higher value = fewer Google Sheets reads and faster page loads.
+
+## Netlify + Backend deploy
+If frontend is on Netlify and backend is hosted separately:
+
+1. Deploy backend and note its public URL.
+2. Set backend env `CORS_ORIGINS` with your Netlify origin.
+   - Example: `CORS_ORIGINS=https://invoice-mgmt.netlify.app`
+3. In project root `netlify.toml`, set redirect target:
+   - `to = "https://YOUR_BACKEND_DOMAIN/api/:splat"`
+4. Redeploy Netlify site.
+
+This prevents `/api/*` login/register calls from returning `404` on Netlify.

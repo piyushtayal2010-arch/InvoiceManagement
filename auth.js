@@ -1,6 +1,32 @@
 (function () {
   const TOKEN_KEY = 'invoiceAuthToken';
   const USER_KEY = 'invoiceAuthUser';
+  const API_BASE_KEY = 'invoiceApiBaseUrl';
+
+  function normalizeBase(url) {
+    return String(url || '').trim().replace(/\/+$/, '');
+  }
+
+  function getApiBaseUrl() {
+    const fromWindow = normalizeBase(window.__API_BASE_URL);
+    if (fromWindow) return fromWindow;
+    return normalizeBase(localStorage.getItem(API_BASE_KEY));
+  }
+
+  function setApiBaseUrl(url) {
+    const normalized = normalizeBase(url);
+    if (!normalized) {
+      localStorage.removeItem(API_BASE_KEY);
+      return;
+    }
+    localStorage.setItem(API_BASE_KEY, normalized);
+  }
+
+  function buildApiUrl(path) {
+    if (/^https?:\/\//i.test(path)) return path;
+    const base = getApiBaseUrl();
+    return `${base}${path}`;
+  }
 
   function getToken() {
     return localStorage.getItem(TOKEN_KEY) || '';
@@ -36,7 +62,7 @@
     if (token) headers.Authorization = `Bearer ${token}`;
     if (!headers['Content-Type'] && options.body) headers['Content-Type'] = 'application/json';
 
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(buildApiUrl(url), { ...options, headers });
     if (response.status === 401) {
       clearSession();
       if (!location.pathname.endsWith('login.html')) {
@@ -73,6 +99,9 @@
   window.Auth = {
     getToken,
     getUser,
+    getApiBaseUrl,
+    setApiBaseUrl,
+    buildApiUrl,
     setSession,
     clearSession,
     authFetch,
