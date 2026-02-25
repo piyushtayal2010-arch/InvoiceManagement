@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Invoice Workspace</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-card card">
+      <div class="card-content">
+        <h4>Invoice Workspace</h4>
+        <p class="grey-text text-darken-1">Login to access your own clients, services, settings, and drafts.</p>
+
+        <form id="loginForm" class="row" autocomplete="off">
+          <div class="input-field col s12 register-only hide">
+            <input id="fullName" type="text">
+            <label for="fullName">Full Name</label>
+          </div>
+          <div class="input-field col s12 register-only hide">
+            <input id="country" type="text">
+            <label for="country">Country</label>
+          </div>
+          <div class="input-field col s12">
+            <input id="email" type="email" required>
+            <label for="email">Email</label>
+          </div>
+          <div class="input-field col s12">
+            <input id="password" type="password" required minlength="6">
+            <label for="password">Password</label>
+          </div>
+          <div class="col s12 login-actions">
+            <button class="btn waves-effect waves-light" type="submit" id="loginBtn">Login</button>
+          </div>
+          <div class="col s12">
+            <a href="#" id="toggleRegisterMode">Need an account? Register</a>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="auth.js"></script>
+  <script src="api.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (window.Auth.getToken()) {
+        const ok = await window.Auth.requireAuth();
+        if (ok) {
+          location.href = 'index.html';
+          return;
+        }
+      }
+
+      const form = document.getElementById('loginForm');
+      const fullNameEl = document.getElementById('fullName');
+      const countryEl = document.getElementById('country');
+      const emailEl = document.getElementById('email');
+      const passwordEl = document.getElementById('password');
+      const loginBtn = document.getElementById('loginBtn');
+      const toggleEl = document.getElementById('toggleRegisterMode');
+      let registerMode = false;
+
+      function renderMode() {
+        document.querySelectorAll('.register-only').forEach((el) => {
+          el.classList.toggle('hide', !registerMode);
+        });
+        loginBtn.textContent = registerMode ? 'Create Account' : 'Login';
+        toggleEl.textContent = registerMode ? 'Already have an account? Login' : 'Need an account? Register';
+        M.updateTextFields();
+      }
+
+      async function doAuth(mode) {
+        const email = emailEl.value.trim().toLowerCase();
+        const password = passwordEl.value;
+        if (!email || !password) {
+          M.toast({ html: 'Email and password are required' });
+          return;
+        }
+        const fullName = fullNameEl.value.trim();
+        const country = countryEl.value.trim();
+        if (mode === 'register' && (!fullName || !country)) {
+          M.toast({ html: 'Full name and country are required for registration' });
+          return;
+        }
+
+        loginBtn.disabled = true;
+        try {
+          const payload = { email, password, fullName, country };
+          const result = mode === 'register'
+            ? await window.Api.register(payload)
+            : await window.Api.login(payload);
+          window.Auth.setSession(result.token, result.user);
+          location.href = 'index.html';
+        } catch (err) {
+          M.toast({ html: err.message || 'Authentication failed' });
+        } finally {
+          loginBtn.disabled = false;
+        }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await doAuth(registerMode ? 'register' : 'login');
+      });
+
+      toggleEl.addEventListener('click', (e) => {
+        e.preventDefault();
+        registerMode = !registerMode;
+        renderMode();
+      });
+
+      renderMode();
+    });
+  </script>
+</body>
+</html>
