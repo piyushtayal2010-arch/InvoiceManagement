@@ -3,6 +3,6 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://invoice-mgmt.netlify.app//api/:splat"
+  to = "https://invoice-mgmt.netlify.app/"
   status = 200
   force = true

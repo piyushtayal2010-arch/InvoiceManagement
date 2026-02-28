@@ -1,6 +1,4 @@
-<<<<<<< ours
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
-<<<<<<< ours
 
 :root {
   --bg: #f3f5fb;
@@ -15,10 +13,6 @@
 }
 
 * { box-sizing: border-box; }
-=======
-/* modern typography and background */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
->>>>>>> theirs
 
 html {
   font-size: 16px;
@@ -31,7 +25,6 @@ html {
 }
 
 body {
-<<<<<<< ours
   margin: 0;
   font-family: 'Inter', sans-serif;
   background: radial-gradient(circle at top right, #e8ecff 0%, var(--bg) 45%);
@@ -41,50 +34,9 @@ body {
 .app-nav {
   background: linear-gradient(120deg, var(--primary), #7a62f6) !important;
   box-shadow: 0 10px 24px rgba(76, 94, 235, 0.25);
-=======
-
-:root {
-  --bg: #f3f5fb;
-  --surface: #ffffff;
-  --surface-soft: #f8f9ff;
-  --primary: #5b6ef5;
-  --primary-600: #4657d3;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --success: #15803d;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: radial-gradient(circle at top right, #e8ecff 0%, var(--bg) 45%);
-  color: var(--text);
-}
-
-.app-nav {
-  background: linear-gradient(120deg, var(--primary), #7a62f6) !important;
-  box-shadow: 0 10px 24px rgba(76, 94, 235, 0.25);
-}
-
-.app-shell {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 260px;
-  background: #111827;
-  color: #f9fafb;
-  padding: 1.25rem 0.75rem;
->>>>>>> theirs
   position: fixed;
-  top: 64px;
-  bottom: 0;
+  top: 0;
   left: 0;
-<<<<<<< ours
   right: 0;
   width: 100%;
   z-index: 100;
@@ -180,93 +132,70 @@ body {
 .app-shell.menu-open::before {
   background: rgba(0, 0, 0, 0.5);
   pointer-events: auto;
-=======
-  font-family: 'Roboto', sans-serif;
-  background-color: #eceff1;
-  color: #263238;
 }
 
-main {
-  padding: 2rem 2rem 1rem 2rem;
-  margin-left: 240px; /* space for fixed sidebar */
->>>>>>> theirs
-}
-
-/* custom sidebar styling */
 .sidebar {
+  width: 260px;
+  background: #111827;
+  color: #f9fafb;
+  padding: 1.25rem 0.75rem;
   position: fixed;
-  top: 0;
+  top: 64px;
+  bottom: 0;
   left: 0;
-<<<<<<< ours
   border-right: 1px solid #1f2937;
   z-index: 50;
   overflow-y: auto;
 }
 
-=======
-  border-right: 1px solid #1f2937;
-}
-
->>>>>>> theirs
-=======
-  width: 240px;
-  height: 100%;
-  background: #ffffff;
-  border-right: 1px solid #ccc;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  z-index: 1000;
-  padding-top: 64px; /* below navbar */
-}
-
-/* hide toggler */
-.sidenav-trigger { display: none; }
-
->>>>>>> theirs
 .sidebar a {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  color: #333;
+  gap: 0.75rem;
+  color: #d1d5db;
   text-decoration: none;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
   font-weight: 500;
+  margin-bottom: 0.35rem;
+  transition: all 0.2s ease;
 }
-<<<<<<< ours
 
 .sidebar a:hover,
 .sidebar a.active-link {
   background: rgba(91, 110, 245, 0.2);
   color: #fff;
-<<<<<<< ours
   border-left: 3px solid #93c5fd;
-=======
->>>>>>> theirs
-=======
-.sidebar a:hover {
-  background: #eceff1;
->>>>>>> theirs
-}
-.sidebar .material-icons {
-  margin-right: 16px;
-}
-.sidebar .link-text {
-  white-space: nowrap;
 }
 
-/* hide hamburger menu (unused) */
-.sidenav-trigger { display: none; }
-
-.container {
-  max-width: 1024px;
-  margin-top: 2rem;
+.main-content {
+  margin-left: 260px;
+  width: calc(100% - 260px);
+  padding: 2rem;
 }
 
-/* cards spacing and elevation */
+.page-header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.page-header h4 {
+  margin: 0;
+  font-weight: 700;
+}
+
+.page-header p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
 .card {
-<<<<<<< ours
   border-radius: 16px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
-<<<<<<< ours
 }
 
 .card .card-title {
@@ -726,94 +655,5 @@ main {
   #itemTable th,
   #itemTable td {
     padding: 0.5rem;
-=======
-}
-
-.card .card-title {
-  font-weight: 600;
-}
-
-.input-field input:focus + label,
-.input-field textarea:focus + label {
-  color: var(--primary) !important;
-=======
-  margin-bottom: 1.5rem;
-  /* subtle shadow for depth */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  border-radius: 6px;
->>>>>>> theirs
-}
-
-h3 {
-  margin-top: 0;
-}
-
-/* tidy up buttons */
-.btn{
-  text-transform: none;
-}
-
-/* adjust sidenav width */
-.sidenav {
-  width: 240px;
-}
-
-<<<<<<< ours
-.btn.secondary {
-  background: #4b5563;
-}
-
-.invoice-items-wrap {
-  margin-top: 1rem;
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
-#itemTable thead {
-  background: var(--surface-soft);
-}
-
-.summary-list .collection-item {
-  font-size: 0.96rem;
-}
-
-.summary-list .collection-item strong {
-  color: var(--success);
-}
-
-.section-help {
-  color: var(--muted);
-  margin: -0.4rem 0 1rem;
-  font-size: 0.92rem;
-}
-
-@media (max-width: 992px) {
-  .sidebar {
-    position: static;
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #1f2937;
-    top: 0;
   }
-
-  .main-content {
-    margin-left: 0;
-    width: 100%;
-    padding: 1rem;
-  }
-
-  .app-shell {
-    flex-direction: column;
->>>>>>> theirs
-  }
-=======
-/* override Materialize form label/focus color */
-.input-field input:focus + label {
-  color: #1976d2 !important;
->>>>>>> theirs
-}
-.input-field input:focus {
-  border-bottom: 1px solid #1976d2 !important;
-  box-shadow: 0 1px 0 0 #1976d2 !important;
 }
