@@ -1,0 +1,10 @@
+{
+  "name": "invoice-app",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "start:backend": "npm --prefix backend start",
+    "dev": "npm --prefix backend run dev"
+  }
+}
