@@ -507,7 +507,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-(async () => {
+ (async () => {
   try {
     mustGetEnv('JWT_SECRET');
     mustGetEnv('GOOGLE_SHEET_ID');
@@ -515,7 +515,7 @@ app.use((err, _req, res, _next) => {
     mustGetEnv('GOOGLE_PRIVATE_KEY');
     await initSheets();
     app.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`);
+      console.log(`backend listening on port ${port}`);
     });
   } catch (err) {
     console.error('Server startup failed:', err.message);
